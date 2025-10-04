@@ -28,7 +28,7 @@ jobs:
       run: cp ./config.example.yml ./config.yml
 
     - name: Start database
-      run: docker run -d -p 8529:8529 -e ARANGO_ROOT_PASSWORD=change-me-together-thick-music-moon --name arango-db arangodb/arangodb:3.13
+      run: docker run -d -p 8529:8529 -e ARANGO_ROOT_PASSWORD=change-me-together-thick-music-moon --name arango-db arangodb/arangodb:3.12
 
     # database may not immediately be available
     - name: Sleep for 10 seconds
