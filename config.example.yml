@@ -1,0 +1,28 @@
+db:
+  host: localhost
+  root: change-me-together-thick-music-moon
+  port: 8529
+  user: hello-world
+  pass: change-me-voice-event-type-steel
+auth:
+  dpv_secret_key: BFRWg3kN1LUvTVbv6w_0MrXP-wejCADF889kfEIDJUk
+  # https://generate.plus/en/base64, 32, url-safe
+  # used for replacing login tokens
+  dpv_token_seconds: 3600
+server:
+  words1: words1.txt
+  words2: words2.txt
+  words3: words3.txt
+  words4: words4.txt
+settings:
+  user_types:
+    - user
+    - athlete
+    - coach
+    - team
+    - group
+    - association
+    - freelancer
+    - company
+    - school
+    - government

@@ -1,0 +1,42 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Build
+      run: go build -v -o ./app/bin/membership ./src/cmd/membership
+
+    - name: Create config.yml
+      run: cp ./config.example.yml ./config.yml
+
+    - name: Start database
+      run: docker run -d -p 8529:8529 -e ARANGO_ROOT_PASSWORD=change-me-together-thick-music-moon --name arango-db arangodb/arangodb:3.11.3
+
+    # database may not immediately be available
+    - name: Sleep for 10 seconds
+      run: sleep 10s
+      shell: bash
+
+    - name: Test
+      run: go test -v ./... -p 8
+
+    - name: Stop database
+      run: docker stop arango-db

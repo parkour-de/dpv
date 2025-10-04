@@ -1,0 +1,44 @@
+# Config files (passwords)
+config.yml
+words1.txt
+words2.txt
+words3.txt
+words4.txt
+keys.txt
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Generated Artifacts from API documentation
+docs/api.html
+docs/api.json
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+out/
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# log
+log/
+*.log
+
+.idea
+*.iml
+.env
+.DS_Store
+.vscode
+
+*.pem
+dist/
+
+/membership
