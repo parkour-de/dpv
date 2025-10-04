@@ -1,0 +1,34 @@
+#%RAML 1.0 DataType
+properties:
+  _key?:
+    type: string
+    description: key to retrieve an entity
+    example: "123"
+  created?:
+    description: RFC 3339 date
+    type: string
+  modified?:
+    description: RFC 3339 date
+    type: string
+  name:
+    type: string
+    example: "DPV Club"
+  rechtsform:
+    type: string
+    example: "e.V."
+  mitgliedsstatus:
+    type: string
+    example: "active"
+  mitglieder:
+    type: integer
+    example: 42
+  stimmen:
+    type: integer
+    example: 10
+  satzung_ok:
+    type: boolean
+    example: true
+  satzung_pruefung:
+    type: string
+    description: RFC 3339 date
+    example: "2024-06-01T12:00:00Z"

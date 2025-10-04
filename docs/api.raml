@@ -1,0 +1,35 @@
+#%RAML 1.0
+title: DPV API
+description: API to get data about DPV
+version: '1.0'
+baseUri: http://localhost:8080/dpv/
+mediaType: application/json
+types:
+  User: !include types/User.raml
+
+/users:
+  post:
+    description: Register a new user
+    body:
+      application/json:
+        type: object
+        properties:
+          email: string
+          password: string
+          name: string
+          vorname: string
+    responses:
+      201:
+        description: User created
+        body:
+          application/json:
+            type: User
+/version:
+  get:
+    description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string
+    responses:
+      '200':
+        description: OK
+        body:
+          type: string
+          example: "42"
