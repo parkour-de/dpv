@@ -2,10 +2,11 @@ package router
 
 import (
 	"dpv/dpv/src/api"
+	"dpv/dpv/src/endpoints/users"
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/t"
-	"dpv/dpv/src/service"
+	"dpv/dpv/src/service/user"
 	"log"
 	"net/http"
 	"os"
@@ -37,8 +38,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	dpv.ConfigInstance = config
 
 	r := httprouter.New()
-	userHandler := service.NewUserHandler(db)
-	r.POST("/dpv/users", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	userService := user.NewService(db)
+	userHandler := users.NewHandler(userService)
+	r.POST("/users", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		userHandler.Register(w, r, nil)
 	})
 

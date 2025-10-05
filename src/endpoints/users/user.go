@@ -1,22 +1,22 @@
-package service
+package users
 
 import (
 	"context"
 	"dpv/dpv/src/api"
 	"dpv/dpv/src/domain/entities"
-	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/security"
 	"dpv/dpv/src/repository/t"
+	"dpv/dpv/src/service/user"
 	"encoding/json"
 	"net/http"
 )
 
 type UserHandler struct {
-	DB *graph.Db
+	Service *user.Service
 }
 
-func NewUserHandler(db *graph.Db) *UserHandler {
-	return &UserHandler{DB: db}
+func NewHandler(service *user.Service) *UserHandler {
+	return &UserHandler{Service: service}
 }
 
 type RegisterRequest struct {
@@ -36,22 +36,21 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ map[str
 		api.Error(w, r, t.Errorf("email and password required"), http.StatusBadRequest)
 		return
 	}
-	// Hash password
 	hash, err := security.HashPassword(req.Password)
 	if err != nil {
 		api.Error(w, r, t.Errorf("could not hash password: %w", err), http.StatusInternalServerError)
 		return
 	}
-	user := &entities.User{
+	userEntity := &entities.User{
 		Email:        req.Email,
 		PasswordHash: hash,
 		Name:         req.Name,
 		Vorname:      req.Vorname,
 		Roles:        []string{"user"},
 	}
-	if err := h.DB.Users.Create(user, context.Background()); err != nil {
+	if err := h.Service.CreateUser(context.Background(), userEntity); err != nil {
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
 	}
-	api.SuccessJson(w, r, user)
+	api.SuccessJson(w, r, userEntity)
 }
