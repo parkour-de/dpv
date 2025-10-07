@@ -23,7 +23,6 @@ func TestGetUsersByEmail(t *testing.T) {
 		}
 	}
 
-	// Query by email
 	result, err := db.GetUsersByEmail(context.Background(), "test1@example.com")
 	if err != nil {
 		t.Fatalf("Query failed: %s", err)

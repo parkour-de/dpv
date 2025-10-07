@@ -60,7 +60,7 @@ func TestRegisterAndGetMe(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Register user
-	reqBody := `{"email":"test@example.com","password":"testpass","vorname":"John","name":"Doe"}`
+	reqBody := `{"email":"test@example.com","password":"TestPassword","vorname":"John","name":"Doe"}`
 	resp, err := http.Post("http://localhost:8082/dpv/users", "application/json", strings.NewReader(reqBody))
 	if err != nil {
 		t.Fatal(err)
@@ -75,7 +75,7 @@ func TestRegisterAndGetMe(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.SetBasicAuth("test@example.com", "testpass")
+	req.SetBasicAuth("test@example.com", "TestPassword")
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {

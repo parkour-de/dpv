@@ -4,11 +4,11 @@ import (
 	"context"
 	"dpv/dpv/src/api"
 	"dpv/dpv/src/domain/entities"
-	"dpv/dpv/src/repository/security"
 	"dpv/dpv/src/repository/t"
 	"dpv/dpv/src/service/user"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -34,23 +34,31 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
 		return
 	}
-	if req.Email == "" || req.Password == "" {
-		api.Error(w, r, t.Errorf("email and password required"), http.StatusBadRequest)
-		return
-	}
-	hash, err := security.HashPassword(req.Password)
-	if err != nil {
-		api.Error(w, r, t.Errorf("could not hash password: %w", err), http.StatusInternalServerError)
-		return
-	}
+
 	userEntity := &entities.User{
-		Email:        req.Email,
-		PasswordHash: hash,
-		Name:         req.Name,
-		Vorname:      req.Vorname,
-		Roles:        []string{"user"},
+		Email:   req.Email,
+		Name:    req.Name,
+		Vorname: req.Vorname,
+		Roles:   []string{"user"},
 	}
-	if err := h.Service.CreateUser(context.Background(), userEntity); err != nil {
+
+	err := h.Service.CreateUser(context.Background(), userEntity, req.Password)
+	if err != nil {
+		// Map validation errors to 400, others to 500
+		switch err.Error() {
+		case t.T("vorname must not be empty"), t.T("name must not be empty"), t.T("email must not be empty"), t.T("password must not be empty"):
+			api.Error(w, r, err, http.StatusBadRequest)
+			return
+		}
+		if err.Error() == t.T("user with this email already exists") ||
+			strings.Contains(err.Error(), t.T("too short (min 10 characters)")) ||
+			strings.Contains(err.Error(), t.T("must not be only digits")) ||
+			strings.Contains(err.Error(), t.T("must not be only lowercase letters")) ||
+			strings.Contains(err.Error(), t.T("must not be only uppercase letters")) ||
+			strings.Contains(err.Error(), t.T("must have at least 8 different glyphs")) {
+			api.Error(w, r, err, http.StatusBadRequest)
+			return
+		}
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
 	}
