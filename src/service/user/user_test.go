@@ -4,6 +4,7 @@ import (
 	"context"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/graph"
+	T "dpv/dpv/src/repository/t"
 	"testing"
 )
 
@@ -24,11 +25,11 @@ func TestCreateUser_Validation(t *testing.T) {
 		password string
 		errMsg   string
 	}{
-		{entities.User{Vorname: "", Name: "N", Email: "e"}, "StrongPass1!", "vorname must not be empty"},
-		{entities.User{Vorname: "V", Name: "", Email: "e"}, "StrongPass1!", "name must not be empty"},
-		{entities.User{Vorname: "V", Name: "N", Email: ""}, "StrongPass1!", "email must not be empty"},
-		{entities.User{Vorname: "V", Name: "N", Email: "e"}, "", "password must not be empty"},
-		{entities.User{Vorname: "V", Name: "N", Email: "e"}, "1234567890", "must not be only digits"},
+		{entities.User{Vorname: "", Name: "N", Email: "e"}, "StrongPass1!", T.T("vorname must not be empty")},
+		{entities.User{Vorname: "V", Name: "", Email: "e"}, "StrongPass1!", T.T("name must not be empty")},
+		{entities.User{Vorname: "V", Name: "N", Email: ""}, "StrongPass1!", T.T("email must not be empty")},
+		{entities.User{Vorname: "V", Name: "N", Email: "e"}, "", T.T("password must not be empty")},
+		{entities.User{Vorname: "V", Name: "N", Email: "e"}, "1234567890", T.T("must not be only digits")},
 	}
 	for _, c := range cases {
 		err := service.CreateUser(ctx, &c.user, c.password)
@@ -60,7 +61,7 @@ func TestCreateUser_DuplicateEmail(t *testing.T) {
 
 	// Second creation should fail due to duplicate email
 	err = service.CreateUser(ctx, user2, password)
-	if err == nil || err.Error() != "user with this email already exists" {
+	if err == nil || err.Error() != T.T("user with this email already exists") {
 		t.Errorf("expected duplicate email error, got '%v'", err)
 	}
 }

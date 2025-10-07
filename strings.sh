@@ -1,4 +1,7 @@
-grep -rho 't\.Errorf\(.*\)' ./src --exclude='*_test.go' | sed -E 's/t\.Errorf\(\s*"(([^"\\]|\\.)*)".*/\1/' | sed -E 's/\\\"/"/g' | sort | uniq > keys.txt
+grep -rho -E 't\.(Errorf|T)\(.*\)' ./src --exclude='*_test.go' \
+  | sed -E 's/t\.(Errorf|T)\(\s*"(([^"\\]|\\.)*)".*/\2/' \
+  | sed -E 's/\\"/"/g' \
+  | sort | uniq > keys.txt
 if [ ! -f "keys.txt" ]; then
   echo "Error: keys.txt not found!"
   exit 1
