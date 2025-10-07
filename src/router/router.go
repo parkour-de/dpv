@@ -3,6 +3,7 @@ package router
 import (
 	"dpv/dpv/src/api"
 	"dpv/dpv/src/endpoints/users"
+	"dpv/dpv/src/middleware"
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/t"
@@ -40,9 +41,6 @@ func NewServer(configPath string, test bool) *http.Server {
 	r := httprouter.New()
 	userService := user.NewService(db)
 	userHandler := users.NewHandler(userService)
-	r.POST("/users", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		userHandler.Register(w, r, nil)
-	})
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
@@ -56,6 +54,8 @@ func NewServer(configPath string, test bool) *http.Server {
 	})
 
 	r.GET("/dpv/version", Version)
+	r.POST("/dpv/users", userHandler.Register)
+	r.GET("/dpv/users/me", middleware.BasicAuthMiddleware(userHandler.Me, db))
 
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)

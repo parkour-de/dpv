@@ -9,6 +9,8 @@ import (
 	"dpv/dpv/src/service/user"
 	"encoding/json"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type UserHandler struct {
@@ -26,7 +28,7 @@ type RegisterRequest struct {
 	Vorname  string `json:"vorname"`
 }
 
-func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
@@ -53,4 +55,22 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ map[str
 		return
 	}
 	api.SuccessJson(w, r, userEntity)
+}
+
+// Me returns the current user
+func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	userEntity, ok := r.Context().Value("user").(*entities.User)
+	if !ok || userEntity == nil {
+		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+		return
+	}
+	// Copy userEntity without password hash
+	resp := &entities.User{
+		Key:     userEntity.Key,
+		Email:   userEntity.Email,
+		Name:    userEntity.Name,
+		Vorname: userEntity.Vorname,
+		Roles:   userEntity.Roles,
+	}
+	api.SuccessJson(w, r, resp)
 }

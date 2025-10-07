@@ -17,19 +17,20 @@ type ErrorResponse struct {
 }
 
 func Authenticated(r *http.Request, db *graph.Db) (*entities.User, error) {
-	key, password, ok := r.BasicAuth()
+	email, password, ok := r.BasicAuth()
 	if !ok {
 		return nil, t.Errorf("authorization header missing or not using Basic Auth")
 	}
-	user, err := db.Users.Read(key, r.Context())
-	if err != nil {
-		return nil, t.Errorf("reading current user failed: %w", err)
+	users, err := db.GetUsersByEmail(r.Context(), email)
+	if err != nil || len(users) != 1 {
+		return nil, t.Errorf("user not found or multiple users returned")
 	}
+	user := users[0]
 	authenticated := security.CheckPasswordHash(user.PasswordHash, password)
 	if !authenticated {
 		return nil, t.Errorf("invalid credentials")
 	}
-	return user, nil
+	return &user, nil
 }
 
 func IsAdmin(user entities.User) bool {

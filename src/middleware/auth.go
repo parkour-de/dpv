@@ -9,7 +9,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func BasicAuthMiddleware(db *graph.Db) httprouter.Handle {
+func BasicAuthMiddleware(next httprouter.Handle, db *graph.Db) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		user, err := api.Authenticated(r, db)
 		if err != nil {
@@ -19,7 +19,7 @@ func BasicAuthMiddleware(db *graph.Db) httprouter.Handle {
 		}
 
 		// Store user in context for handlers
-		_ = context.WithValue(r.Context(), "user", user)
-		// next(w, r.WithContext(ctx), ps)
+		ctx := context.WithValue(r.Context(), "user", user)
+		next(w, r.WithContext(ctx), ps)
 	}
 }

@@ -24,6 +24,15 @@ types:
         body:
           application/json:
             type: User
+/users/me:
+  get:
+    description: Get the current authenticated user
+    responses:
+      200:
+        description: Current user details
+        body:
+          application/json:
+            type: User
 /version:
   get:
     description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string
