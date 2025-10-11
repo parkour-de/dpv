@@ -78,15 +78,19 @@ func (s *Service) RequestEmailValidation(ctx context.Context, newEmail string) e
 		targetEmail = user.Email
 	}
 
-	token, err := security.GenerateValidationToken(user.Key, expiry, targetEmail, user.PasswordHash, dpv.ConfigInstance.Email.ValidationSecret)
+	// Use command and parameter for token
+	command := "validate-email"
+	parameter := targetEmail
+
+	token, err := security.GenerateValidationToken(command, user.Key, expiry, parameter, user.PasswordHash, dpv.ConfigInstance.Email.ValidationSecret)
 	if err != nil {
 		return t.Errorf("could not generate validation token: %w", err)
 	}
 
 	// Build validation URL
 	baseURL := "http://localhost:8080" // TODO: Make this configurable
-	validationURL := fmt.Sprintf("%s/dpv/users/validate-email?key=%s&expiry=%d&email=%s&token=%s",
-		baseURL, user.Key, expiry, targetEmail, token)
+	validationURL := fmt.Sprintf("%s/dpv/users/validate-email?key=%s&expiry=%d&command=%s&parameter=%s&token=%s",
+		baseURL, user.Key, expiry, command, parameter, token)
 
 	// Send email
 	emailService := email.NewService(dpv.ConfigInstance)
@@ -113,15 +117,14 @@ func (s *Service) ValidateEmail(ctx context.Context, userKey string, expiry int6
 	}
 
 	// Validate token
-	if !security.ValidateToken(userKey, expiry, email, user.PasswordHash,
+	if !security.ValidateToken("validate-email", userKey, expiry, email, user.PasswordHash,
 		dpv.ConfigInstance.Email.ValidationSecret, token) {
 		return t.Errorf("invalid validation token")
 	}
 
-	// Update user
+	// Update user (for validate-email command)
 	now := time.Now()
 	user.EmailVerified = &now
 	user.Email = email
-
 	return s.DB.Users.Update(user, ctx)
 }

@@ -5,13 +5,18 @@ import (
 	"crypto/hmac"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-// GenerateValidationToken creates a secure token for email validation
-func GenerateValidationToken(userKey string, expiry int64, email string, passwordHash string, secret string) (string, error) {
-	data := fmt.Sprintf("%s:%d:%s:%s:%s", userKey, expiry, email, passwordHash, secret)
+// GenerateValidationToken creates a secure token for validation actions
+func GenerateValidationToken(command string, userKey string, expiry int64, parameter string, passwordHash string, secret string) (string, error) {
+	data := fmt.Sprintf("%s\x01%s\x01%d\x01%s\x01%s\x01%s", command, userKey, expiry, parameter, passwordHash, secret)
+	// Ensure separator appears exactly 5 times
+	if strings.Count(data, "\x01") != 5 {
+		return "", fmt.Errorf("separator appears %d times, expected 5", strings.Count(data, "\x01"))
+	}
 	hash, err := bcrypt.GenerateFromPassword(saltString(data, secret), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -20,8 +25,12 @@ func GenerateValidationToken(userKey string, expiry int64, email string, passwor
 }
 
 // ValidateToken verifies if a validation token is correct
-func ValidateToken(userKey string, expiry int64, email string, passwordHash string, secret string, token string) bool {
-	data := fmt.Sprintf("%s:%d:%s:%s:%s", userKey, expiry, email, passwordHash, secret)
+func ValidateToken(command string, userKey string, expiry int64, parameter string, passwordHash string, secret string, token string) bool {
+	data := fmt.Sprintf("%s\x01%s\x01%d\x01%s\x01%s\x01%s", command, userKey, expiry, parameter, passwordHash, secret)
+	// Ensure separator appears exactly 5 times
+	if strings.Count(data, "\x01") != 5 {
+		return false
+	}
 	tokenBytes, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil {
 		return false
