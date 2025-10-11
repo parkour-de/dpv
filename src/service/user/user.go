@@ -89,17 +89,49 @@ func (s *Service) RequestEmailValidation(ctx context.Context, newEmail string) e
 
 	// Build validation URL
 	baseURL := "http://localhost:8080" // TODO: Make this configurable
-	validationURL := fmt.Sprintf("%s/dpv/users/validate-email?key=%s&expiry=%d&command=%s&parameter=%s&token=%s",
-		baseURL, user.Key, expiry, command, parameter, token)
+	validationURL := fmt.Sprintf("%s/dpv/users/validate-email?key=%s&expiry=%d&email=%s&token=%s",
+		baseURL, user.Key, expiry, parameter, token)
 
 	// Send email
 	emailService := email.NewService(dpv.ConfigInstance)
-	return emailService.SendValidationEmail(email.ValidationData{
+	return emailService.SendEmailValidationEmail(email.ValidationData{
 		User:          user,
 		ValidationURL: validationURL,
 		ExpiryTime:    time.Unix(expiry, 0),
 		NewEmail:      newEmail,
 		IsEmailChange: newEmail != "" && newEmail != user.Email,
+	})
+}
+
+// RequestPasswordReset sends password reset email to user by email
+func (s *Service) RequestPasswordReset(ctx context.Context, emailAddr string) error {
+	users, err := s.DB.GetUsersByEmail(ctx, emailAddr)
+	if err != nil {
+		return t.Errorf("could not find user: %w", err)
+	}
+	if len(users) == 0 {
+		return t.Errorf("user with this email does not exist")
+	}
+	user := users[0]
+
+	expiry := time.Now().Add(12 * time.Hour).Unix()
+	command := "change-password"
+	parameter := ""
+
+	token, err := security.GenerateValidationToken(command, user.Key, expiry, parameter, user.PasswordHash, dpv.ConfigInstance.Email.ValidationSecret)
+	if err != nil {
+		return t.Errorf("could not generate password reset token: %w", err)
+	}
+
+	baseURL := "http://localhost:8080" // TODO: Make this configurable
+	resetURL := fmt.Sprintf("%s/dpv/users/reset-password?key=%s&expiry=%d&token=%s",
+		baseURL, user.Key, expiry, token)
+
+	emailService := email.NewService(dpv.ConfigInstance)
+	return emailService.SendPasswordResetEmail(email.PasswordResetData{
+		User:       &user,
+		ResetURL:   resetURL,
+		ExpiryTime: time.Unix(expiry, 0),
 	})
 }
 
@@ -126,5 +158,36 @@ func (s *Service) ValidateEmail(ctx context.Context, userKey string, expiry int6
 	now := time.Now()
 	user.EmailVerified = &now
 	user.Email = email
+	return s.DB.Users.Update(user, ctx)
+}
+
+// ValidatePasswordReset processes password reset from link
+func (s *Service) ValidatePasswordReset(ctx context.Context, userKey string, expiry int64, token string, newPassword string) error {
+	if time.Now().Unix() > expiry {
+		return t.Errorf("password reset link has expired")
+	}
+
+	user, err := s.DB.Users.Read(userKey, ctx)
+	if err != nil {
+		return t.Errorf("user not found: %w", err)
+	}
+
+	if !security.ValidateToken("change-password", userKey, expiry, "", user.PasswordHash,
+		dpv.ConfigInstance.Email.ValidationSecret, token) {
+		return t.Errorf("invalid password reset token")
+	}
+
+	if newPassword == "" {
+		return t.Errorf("password must not be empty")
+	}
+	if ok, err := security.IsStrongPassword(newPassword); !ok {
+		return err
+	}
+
+	hash, err := security.HashPassword(newPassword)
+	if err != nil {
+		return t.Errorf("could not hash password: %w", err)
+	}
+	user.PasswordHash = hash
 	return s.DB.Users.Update(user, ctx)
 }
