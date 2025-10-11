@@ -9,6 +9,15 @@ auth:
   # https://generate.plus/en/base64, 32, url-safe
   # used for replacing login tokens
   dpv_token_seconds: 3600
+email:
+  smtp_host: your-server.de
+  smtp_port: 465
+  smtp_ssl: true
+  smtp_username: your-username@your-server.de
+  smtp_password: your-email-password
+  from_address: your-username@your-server.de
+  from_name: Deutscher Parkour Verband
+  validation_secret: your-validation-secret-key
 server:
   words1: words1.txt
   words2: words2.txt

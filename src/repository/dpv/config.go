@@ -24,6 +24,16 @@ type Config struct {
 		DpvSecretKey    string `yaml:"dpv_secret_key"`
 		DpvTokenSeconds int    `yaml:"dpv_token_seconds"`
 	} `yaml:"auth"`
+	Email struct {
+		SMTPHost         string `yaml:"smtp_host"`
+		SMTPPort         int    `yaml:"smtp_port"`
+		SMTPSSL          bool   `yaml:"smtp_ssl"`
+		SMTPUsername     string `yaml:"smtp_username"`
+		SMTPPassword     string `yaml:"smtp_password"`
+		FromAddress      string `yaml:"from_address"`
+		FromName         string `yaml:"from_name"`
+		ValidationSecret string `yaml:"validation_secret"`
+	} `yaml:"email"`
 	Server struct {
 		Words1 string `yaml:"words1"`
 		Words2 string `yaml:"words2"`

@@ -6,6 +6,9 @@ baseUri: http://localhost:8080/dpv/
 mediaType: application/json
 types:
   User: !include types/User.raml
+securitySchemes:
+  basicAuth:
+    type: Basic Authentication
 
 /users:
   post:
@@ -24,15 +27,86 @@ types:
         body:
           application/json:
             type: User
-/users/me:
-  get:
-    description: Get the current authenticated user
-    responses:
-      200:
-        description: Current user details
-        body:
-          application/json:
-            type: User
+  /me:
+    get:
+      description: Get the current authenticated user
+      securedBy: [ basicAuth ]
+      responses:
+        200:
+          description: Current user details
+          body:
+            application/json:
+              type: User
+  /request-email-validation:
+    post:
+      description: Request a validation email for the user's email address. Requires authentication.
+      securedBy: [ basicAuth ]
+      body:
+        application/json:
+          type: object
+          properties:
+            email:
+              type: string
+              required: false
+              description: Optional. If provided, sends validation to this email; otherwise uses user's current email.
+      responses:
+        200:
+          description: Validation email sent
+          body:
+            application/json:
+              type: object
+              properties:
+                message: string
+        400:
+          description: Bad request (missing/invalid data)
+          body:
+            application/json:
+              type: object
+              properties:
+                error: string
+  /validate-email:
+    get:
+      description: Validate a user's email address using query parameters from the validation link.
+      queryParameters:
+        key:
+          type: string
+          required: true
+          description: User key
+        expiry:
+          type: string
+          required: true
+          description: Expiry timestamp
+        email:
+          type: string
+          required: true
+          description: Email address to validate
+        token:
+          type: string
+          required: true
+          description: Validation token
+      responses:
+        200:
+          description: Email successfully validated (returns HTML)
+          body:
+            text/html:
+              example: |
+                <!DOCTYPE html>
+                <html lang="de">
+                <head>
+                  <meta charset="UTF-8">
+                  <title>E-Mail bestätigt - DPV</title>
+                </head>
+                <body>
+                  <h1>✅ E-Mail-Adresse erfolgreich bestätigt!</h1>
+                </body>
+                </html>
+        400:
+          description: Bad request (missing/invalid parameters)
+          body:
+            application/json:
+              type: object
+              properties:
+                error: string
 /version:
   get:
     description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string

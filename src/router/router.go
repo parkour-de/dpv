@@ -57,6 +57,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.POST("/dpv/users", userHandler.Register)
 	r.GET("/dpv/users/me", middleware.BasicAuthMiddleware(userHandler.Me, db))
 
+	r.POST("/dpv/users/request-email-validation", middleware.BasicAuthMiddleware(userHandler.RequestEmailValidation, db))
+	r.GET("/dpv/users/validate-email", userHandler.ValidateEmail)
+
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)
 		api.Error(w, r, t.Errorf("Whoops! It seems we've stumbled upon a glitch here. In the meantime, consider this a chance to take a breather."), http.StatusInternalServerError)

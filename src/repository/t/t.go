@@ -19,6 +19,10 @@ func Errorf(format string, a ...any) error {
 	return fmt.Errorf(T(format), a...)
 }
 
+func Sprintf(format string, a ...any) string {
+	return fmt.Sprintf(T(format), a...)
+}
+
 var de = map[string]string{}
 
 func LoadDE(config *dpv.Config) error {
