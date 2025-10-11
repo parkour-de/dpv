@@ -17,7 +17,7 @@ func GenerateValidationToken(command string, userKey string, expiry int64, param
 	if strings.Count(data, "\x01") != 5 {
 		return "", fmt.Errorf("separator appears %d times, expected 5", strings.Count(data, "\x01"))
 	}
-	hash, err := bcrypt.GenerateFromPassword(saltString(data, secret), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword(saltString(data, secret), 10)
 	if err != nil {
 		return "", err
 	}
@@ -33,6 +33,10 @@ func ValidateToken(command string, userKey string, expiry int64, parameter strin
 	}
 	tokenBytes, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil {
+		return false
+	}
+	// Check that the decoded token begins with "$2a$10$"
+	if len(tokenBytes) < 7 || string(tokenBytes[:7]) != "$2a$10$" {
 		return false
 	}
 	return bcrypt.CompareHashAndPassword(tokenBytes, saltString(data, secret)) == nil
