@@ -314,7 +314,11 @@ func (h *UserHandler) HandleResetPassword(w http.ResponseWriter, r *http.Request
 
 func filteredResponse(userEntity *entities.User) *entities.User {
 	resp := &entities.User{
-		Key:     userEntity.Key,
+		Entity: entities.Entity{
+			Key:      userEntity.Key,
+			Created:  userEntity.Created,
+			Modified: userEntity.Modified,
+		},
 		Email:   userEntity.Email,
 		Name:    userEntity.Name,
 		Vorname: userEntity.Vorname,
