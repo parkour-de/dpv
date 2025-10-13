@@ -242,9 +242,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] Basic HTTP API structure
 
 ### Phase 2: Extended User Features 🚧
-- [ ] Email verification system
-- [ ] Password reset workflows
-- [ ] User profile updates
+- [x] Email verification system
+- [x] Password reset workflows
+- [x] User profile updates
 
 ### Phase 3: Club Management 📋
 - [ ] Club/organization creation
