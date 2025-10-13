@@ -64,13 +64,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
 	}
-	resp := &entities.User{
-		Key:     userEntity.Key,
-		Email:   userEntity.Email,
-		Name:    userEntity.Name,
-		Vorname: userEntity.Vorname,
-		Roles:   userEntity.Roles,
-	}
+	resp := filteredResponse(userEntity)
 	api.SuccessJson(w, r, resp)
 }
 
@@ -81,14 +75,35 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
 		return
 	}
-	// Copy userEntity without password hash
-	resp := &entities.User{
-		Key:     userEntity.Key,
-		Email:   userEntity.Email,
-		Name:    userEntity.Name,
-		Vorname: userEntity.Vorname,
-		Roles:   userEntity.Roles,
+	resp := filteredResponse(userEntity)
+	api.SuccessJson(w, r, resp)
+}
+
+// UpdateMe allows the user to update their vorname and/or name
+func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	userEntity, ok := r.Context().Value("user").(*entities.User)
+	if !ok || userEntity == nil {
+		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+		return
 	}
+
+	var req struct {
+		Vorname string `json:"vorname,omitempty"`
+		Name    string `json:"name,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
+		return
+	}
+
+	err := h.Service.UpdateMe(r.Context(), req.Vorname, req.Name)
+	if err != nil {
+		api.Error(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	// Return updated user
+	resp := filteredResponse(userEntity)
 	api.SuccessJson(w, r, resp)
 }
 
@@ -295,4 +310,15 @@ func (h *UserHandler) HandleResetPassword(w http.ResponseWriter, r *http.Request
 	api.SuccessJson(w, r, map[string]string{
 		"message": t.Sprintf("Password successfully changed"),
 	})
+}
+
+func filteredResponse(userEntity *entities.User) *entities.User {
+	resp := &entities.User{
+		Key:     userEntity.Key,
+		Email:   userEntity.Email,
+		Name:    userEntity.Name,
+		Vorname: userEntity.Vorname,
+		Roles:   userEntity.Roles,
+	}
+	return resp
 }

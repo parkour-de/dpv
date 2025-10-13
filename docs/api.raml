@@ -38,6 +38,21 @@ securitySchemes:
           body:
             application/json:
               type: User
+    patch:
+      description: Update the current authenticated user
+      securedBy: [ basicAuth ]
+      body:
+        application/json:
+          type: object
+          properties:
+            name: string
+            vorname: string
+      responses:
+        200:
+          description: Updated user details
+          body:
+            application/json:
+              type: User
   /request-email-validation:
     post:
       description: Request a validation email for the user's email address. Requires authentication.

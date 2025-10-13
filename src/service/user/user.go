@@ -53,6 +53,26 @@ func (s *Service) CreateUser(ctx context.Context, user *entities.User, password 
 	return s.DB.Users.Create(user, ctx)
 }
 
+func (s *Service) UpdateMe(ctx context.Context, newVorname, newName string) error {
+	user, ok := ctx.Value("user").(*entities.User)
+	if !ok || user == nil {
+		return t.Errorf("user not found in context")
+	}
+	updated := false
+	if newVorname != "" {
+		user.Vorname = newVorname
+		updated = true
+	}
+	if newName != "" {
+		user.Name = newName
+		updated = true
+	}
+	if !updated {
+		return t.Errorf("no fields to update")
+	}
+	return s.DB.Users.Update(user, ctx)
+}
+
 // RequestEmailValidation sends validation email
 func (s *Service) RequestEmailValidation(ctx context.Context, newEmail string) error {
 	user, ok := ctx.Value("user").(*entities.User)
