@@ -240,13 +240,17 @@ Um Ihr Passwort zurückzusetzen, öffnen Sie bitte den folgenden Link in Ihrem B
 
 %s
 
+Alternativ können Sie diesen Link kopieren und in Ihren Browser einfügen:
+
+%s
+
 WICHTIG: Dieser Link ist nur bis zum %s gültig.
 
 Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail einfach.
 
 © %d Deutscher Parkour Verband`,
 		data.User.Vorname, data.User.Name,
-		data.ResetURL,
+		data.ResetURL, data.ResetURL,
 		expiryBerlin.Format("02.01.2006 um 15:04 Uhr"),
 		time.Now().Year())
 
@@ -277,6 +281,11 @@ Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail einfac
         <p>Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail einfach.</p>
     </div>
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666">
+        <p><strong>Über die DPV-Mitgliederverwaltung:</strong><br>
+        Die DPV-Mitgliederverwaltung ist das offizielle System des Deutschen Parkour Verbandes zur Verwaltung von Mitgliedschaften, Vereinen und Organisationen. Mit diesem System können Sie Ihre Mitgliedschaft beantragen, Vereinsdaten verwalten und an der Parkour-Community in Deutschland teilnehmen.</p>
+        
+        <p>Bei Fragen wenden Sie sich an: <a href="mailto:info@parkour-deutschland.de">info@parkour-deutschland.de</a></p>
+        
         <p>© %d Deutscher Parkour Verband</p>
     </div>
 </body>

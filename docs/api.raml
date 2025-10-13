@@ -107,6 +107,141 @@ securitySchemes:
               type: object
               properties:
                 error: string
+  /request-password-reset:
+    post:
+      description: Request a password reset email for the given email address.
+      body:
+        application/json:
+          type: object
+          properties:
+            email:
+              type: string
+              required: true
+              description: The email address to send the password reset link to.
+      responses:
+        200:
+          description: Password reset email sent
+          body:
+            application/json:
+              type: object
+              properties:
+                message: string
+        400:
+          description: Bad request (missing/invalid data)
+          body:
+            application/json:
+              type: object
+              properties:
+                error: string
+  /reset-password:
+    get:
+      description: Show password reset HTML form. Query parameters are passed from the email link.
+      queryParameters:
+        key:
+          type: string
+          required: true
+          description: User key
+        expiry:
+          type: string
+          required: true
+          description: Expiry timestamp
+        token:
+          type: string
+          required: true
+          description: Password reset token
+      responses:
+        200:
+          description: Password reset form (HTML with JavaScript for JSON POST)
+          body:
+            text/html:
+              example: |
+                <!DOCTYPE html>
+                <html lang="de">
+                <head>
+                  <meta charset="UTF-8">
+                  <title>Passwort zurücksetzen - DPV</title>
+                </head>
+                <body>
+                  <h1>🔒 Passwort zurücksetzen</h1>
+                  <form id="resetForm">
+                    <input type="hidden" id="key" value="...">
+                    <input type="hidden" id="expiry" value="...">
+                    <input type="hidden" id="token" value="...">
+                    <label for="password">Neues Passwort:</label>
+                    <input type="password" id="password" required>
+                    <label for="confirm">Passwort bestätigen:</label>
+                    <input type="password" id="confirm" required>
+                    <button type="submit">Passwort ändern</button>
+                  </form>
+                  <div id="result"></div>
+                  <script>
+                    document.getElementById('resetForm').onsubmit = async function(e) {
+                      e.preventDefault();
+                      const key = document.getElementById('key').value;
+                      const expiry = document.getElementById('expiry').value;
+                      const token = document.getElementById('token').value;
+                      const password = document.getElementById('password').value;
+                      const confirm = document.getElementById('confirm').value;
+                      const resultDiv = document.getElementById('result');
+                      resultDiv.textContent = '';
+                      const resp = await fetch(window.location.pathname + window.location.search, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key, expiry, token, password, confirm })
+                      });
+                      const data = await resp.json();
+                      if (resp.ok) {
+                        resultDiv.textContent = '✅ Passwort erfolgreich geändert!';
+                      } else {
+                        resultDiv.textContent = 'Fehler: ' + (data.error || 'Unbekannter Fehler');
+                      }
+                    };
+                  </script>
+                </body>
+                </html>
+        400:
+          description: Bad request (missing/invalid parameters)
+          body:
+            application/json:
+              type: object
+              properties:
+                error: string
+    post:
+      description: Handle password reset. Expects all variables as JSON in POST body.
+      body:
+        application/json:
+          type: object
+          properties:
+            key:
+              type: string
+              required: true
+            expiry:
+              type: string
+              required: true
+            token:
+              type: string
+              required: true
+            password:
+              type: string
+              required: true
+            confirm:
+              type: string
+              required: true
+      responses:
+        200:
+          description: Password successfully changed (returns JSON)
+          body:
+            application/json:
+              type: object
+              properties:
+                message: string
+        400:
+          description: Bad request (missing/invalid parameters or passwords do not match)
+          body:
+            application/json:
+              type: object
+              properties:
+                error: string
 /version:
   get:
     description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string
