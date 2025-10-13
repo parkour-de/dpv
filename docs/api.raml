@@ -6,6 +6,7 @@ baseUri: http://localhost:8080/dpv/
 mediaType: application/json
 types:
   User: !include types/User.raml
+  ErrorResponse: !include types/errorResponse.raml
 securitySchemes:
   basicAuth:
     type: Basic Authentication
@@ -22,7 +23,7 @@ securitySchemes:
           name: string
           vorname: string
     responses:
-      201:
+      200:
         description: User created
         body:
           application/json:
@@ -54,16 +55,12 @@ securitySchemes:
           description: Validation email sent
           body:
             application/json:
-              type: object
-              properties:
-                message: string
+              type: ErrorResponse
         400:
           description: Bad request (missing/invalid data)
           body:
             application/json:
-              type: object
-              properties:
-                error: string
+              type: ErrorResponse
   /validate-email:
     get:
       description: Validate a user's email address using query parameters from the validation link.
@@ -104,9 +101,7 @@ securitySchemes:
           description: Bad request (missing/invalid parameters)
           body:
             application/json:
-              type: object
-              properties:
-                error: string
+              type: ErrorResponse
   /request-password-reset:
     post:
       description: Request a password reset email for the given email address.
@@ -123,16 +118,12 @@ securitySchemes:
           description: Password reset email sent
           body:
             application/json:
-              type: object
-              properties:
-                message: string
+              type: ErrorResponse
         400:
           description: Bad request (missing/invalid data)
           body:
             application/json:
-              type: object
-              properties:
-                error: string
+              type: ErrorResponse
   /reset-password:
     get:
       description: Show password reset HTML form. Query parameters are passed from the email link.
@@ -163,49 +154,13 @@ securitySchemes:
                 </head>
                 <body>
                   <h1>🔒 Passwort zurücksetzen</h1>
-                  <form id="resetForm">
-                    <input type="hidden" id="key" value="...">
-                    <input type="hidden" id="expiry" value="...">
-                    <input type="hidden" id="token" value="...">
-                    <label for="password">Neues Passwort:</label>
-                    <input type="password" id="password" required>
-                    <label for="confirm">Passwort bestätigen:</label>
-                    <input type="password" id="confirm" required>
-                    <button type="submit">Passwort ändern</button>
-                  </form>
-                  <div id="result"></div>
-                  <script>
-                    document.getElementById('resetForm').onsubmit = async function(e) {
-                      e.preventDefault();
-                      const key = document.getElementById('key').value;
-                      const expiry = document.getElementById('expiry').value;
-                      const token = document.getElementById('token').value;
-                      const password = document.getElementById('password').value;
-                      const confirm = document.getElementById('confirm').value;
-                      const resultDiv = document.getElementById('result');
-                      resultDiv.textContent = '';
-                      const resp = await fetch(window.location.pathname + window.location.search, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ key, expiry, token, password, confirm })
-                      });
-                      const data = await resp.json();
-                      if (resp.ok) {
-                        resultDiv.textContent = '✅ Passwort erfolgreich geändert!';
-                      } else {
-                        resultDiv.textContent = 'Fehler: ' + (data.error || 'Unbekannter Fehler');
-                      }
-                    };
-                  </script>
                 </body>
                 </html>
         400:
           description: Bad request (missing/invalid parameters)
           body:
             application/json:
-              type: object
-              properties:
-                error: string
+              type: ErrorResponse
     post:
       description: Handle password reset. Expects all variables as JSON in POST body.
       body:
@@ -232,16 +187,12 @@ securitySchemes:
           description: Password successfully changed (returns JSON)
           body:
             application/json:
-              type: object
-              properties:
-                message: string
+              type: ErrorResponse
         400:
           description: Bad request (missing/invalid parameters or passwords do not match)
           body:
             application/json:
-              type: object
-              properties:
-                error: string
+              type: ErrorResponse
 /version:
   get:
     description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string

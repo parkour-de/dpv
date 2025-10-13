@@ -64,7 +64,14 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
 	}
-	api.SuccessJson(w, r, userEntity)
+	resp := &entities.User{
+		Key:     userEntity.Key,
+		Email:   userEntity.Email,
+		Name:    userEntity.Name,
+		Vorname: userEntity.Vorname,
+		Roles:   userEntity.Roles,
+	}
+	api.SuccessJson(w, r, resp)
 }
 
 // Me returns the current user
