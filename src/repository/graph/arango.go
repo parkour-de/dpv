@@ -56,7 +56,7 @@ func GetOrCreateDatabase(c arangodb.Client, dbname string, config *dpv.Config) (
 		}
 		trueBool := true
 		if db, err = c.CreateDatabase(context.Background(), dbname, &arangodb.CreateDatabaseOptions{Users: []arangodb.CreateDatabaseUserOptions{
-			{config.DB.User, config.DB.Pass, &trueBool, nil},
+			{UserName: config.DB.User, Password: config.DB.Pass, Active: &trueBool},
 		}}); err != nil {
 			return nil, t.Errorf("failed to create database: %w", err)
 		}

@@ -6,6 +6,7 @@ baseUri: http://localhost:8080/dpv/
 mediaType: application/json
 types:
   User: !include types/User.raml
+  Club: !include types/Club.raml
   ErrorResponse: !include types/errorResponse.raml
 securitySchemes:
   basicAuth:
@@ -208,6 +209,91 @@ securitySchemes:
           body:
             application/json:
               type: ErrorResponse
+/clubs:
+  securedBy: [ basicAuth ]
+  post:
+    description: Create a new club
+    body:
+      application/json:
+        type: object
+        properties:
+          name:
+            type: string
+            example: "Parkour Club e.V."
+          rechtsform:
+            type: string
+            example: "e.V."
+          mitgliedsstatus:
+            type: string
+            required: false
+            example: "mitglied"
+          email:
+            type: string
+            required: false
+            example: "info@parkour-club.de"
+          adresse:
+            type: string
+            required: false
+            example: "Musterstraße 1, 12345 Musterstadt"
+    responses:
+      200:
+        description: Club created
+        body:
+          application/json:
+            type: Club
+  get:
+    description: List clubs administered by the current user
+    responses:
+      200:
+        description: List of clubs
+        body:
+          application/json:
+            type: Club[]
+  /{key}:
+    get:
+      description: Get details of a specific club
+      responses:
+        200:
+          description: Club details
+          body:
+            application/json:
+              type: Club
+        403:
+          description: Unauthorized
+    patch:
+      description: Partially update a club
+      body:
+        application/json:
+          type: object
+          properties:
+            name:
+              type: string
+              required: false
+              example: "Parkour Club e.V."
+            rechtsform:
+              type: string
+              required: false
+              example: "e.V."
+            email:
+              type: string
+              required: false
+              example: "info@parkour-club.de"
+            adresse:
+              type: string
+              required: false
+              example: "Musterstraße 1, 12345 Musterstadt"
+      responses:
+        200:
+          description: Updated club details
+          body:
+            application/json:
+              type: Club
+    delete:
+      description: Delete a club
+      responses:
+        204:
+          description: Club deleted
+
 /version:
   get:
     description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string

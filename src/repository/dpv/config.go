@@ -40,6 +40,9 @@ type Config struct {
 		Words3 string `yaml:"words3"`
 		Words4 string `yaml:"words4"`
 	}
+	Storage struct {
+		DocumentPath string `yaml:"document_path"`
+	} `yaml:"storage"`
 	Settings struct {
 		Version   string
 		UserTypes []string `yaml:"user_types"`

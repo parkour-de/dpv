@@ -26,5 +26,4 @@ type Club struct {
 	SatzungPruefung  time.Time `json:"satzung_pruefung"`
 	RegisterOK       bool      `json:"register_ok,omitempty"`
 	RegisterPruefung time.Time `json:"register_pruefung"`
-	// ... other fields
 }

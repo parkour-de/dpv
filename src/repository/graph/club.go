@@ -1,0 +1,81 @@
+package graph
+
+import (
+	"context"
+	"dpv/dpv/src/domain/entities"
+	"dpv/dpv/src/repository/t"
+
+	"github.com/arangodb/go-driver/v2/arangodb"
+	"github.com/arangodb/go-driver/v2/arangodb/shared"
+)
+
+// CreateClub creates a club and an 'authorizes' edge for the creator.
+func (db *Db) CreateClub(ctx context.Context, club *entities.Club, userKey string) error {
+	// Create the club document
+	err := db.Clubs.Create(club, ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create the 'authorizes' edge
+	edge := map[string]interface{}{
+		"_from": "users/" + userKey,
+		"_to":   "clubs/" + club.GetKey(),
+		"role":  "vorstand",
+		"type":  "authorizes",
+	}
+
+	_, err = db.Edges.CreateDocument(ctx, edge)
+	if err != nil {
+		return t.Errorf("could not create authorization edge: %w", err)
+	}
+
+	return nil
+}
+
+// GetAdministeredClubs returns all clubs where the user is a board member.
+func (db *Db) GetAdministeredClubs(ctx context.Context, userKey string) ([]entities.Club, error) {
+	query := `
+		FOR v, e IN 1..1 OUTBOUND @userKey edges
+			FILTER e.type == "authorizes" AND e.role == "vorstand"
+			RETURN v
+	`
+	bindVars := map[string]interface{}{
+		"userKey": "users/" + userKey,
+	}
+
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return nil, t.Errorf("query for administered clubs failed: %w", err)
+	}
+	defer cursor.Close()
+
+	var result []entities.Club
+	for {
+		var doc entities.Club
+		_, err := cursor.ReadDocument(ctx, &doc)
+		if shared.IsNoMoreDocuments(err) {
+			break
+		} else if err != nil {
+			return nil, t.Errorf("obtaining club document failed: %w", err)
+		}
+		result = append(result, doc)
+	}
+
+	return result, nil
+}
+
+// GetClubByKey retrieves a club by its key.
+func (db *Db) GetClubByKey(ctx context.Context, key string) (*entities.Club, error) {
+	return db.Clubs.Read(key, ctx)
+}
+
+// UpdateClub updates an existing club.
+func (db *Db) UpdateClub(ctx context.Context, club *entities.Club) error {
+	return db.Clubs.Update(club, ctx)
+}
+
+// DeleteClub deletes a club.
+func (db *Db) DeleteClub(ctx context.Context, club *entities.Club) error {
+	return db.Clubs.Delete(club, ctx)
+}

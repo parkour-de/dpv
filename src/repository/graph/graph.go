@@ -11,11 +11,16 @@ import (
 type Db struct {
 	Database arangodb.Database
 	Users    EntityManager[*entities.User]
+	Clubs    EntityManager[*entities.Club]
 	Edges    arangodb.Collection
 }
 
 func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 	users, err := NewEntityManager[*entities.User](database, "users", false, func() *entities.User { return new(entities.User) })
+	if err != nil {
+		return nil, err
+	}
+	clubs, err := NewEntityManager[*entities.Club](database, "clubs", false, func() *entities.Club { return new(entities.Club) })
 	if err != nil {
 		return nil, err
 	}
@@ -26,6 +31,7 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 	return &Db{
 		database,
 		users,
+		clubs,
 		edges,
 	}, nil
 }

@@ -2,11 +2,13 @@ package router
 
 import (
 	"dpv/dpv/src/api"
+	"dpv/dpv/src/endpoints/clubs"
 	"dpv/dpv/src/endpoints/users"
 	"dpv/dpv/src/middleware"
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/t"
+	"dpv/dpv/src/service/club"
 	"dpv/dpv/src/service/user"
 	"log"
 	"net/http"
@@ -42,6 +44,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	userService := user.NewService(db)
 	userHandler := users.NewHandler(userService)
 
+	clubService := club.NewService(db)
+	clubHandler := clubs.NewHandler(clubService)
+
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
 			header := w.Header()
@@ -65,6 +70,12 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.POST("/dpv/users/request-password-reset", userHandler.RequestPasswordReset)
 	r.GET("/dpv/users/reset-password", userHandler.ShowResetPasswordForm)
 	r.POST("/dpv/users/reset-password", userHandler.HandleResetPassword)
+
+	r.POST("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.Create, db))
+	r.GET("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.List, db))
+	r.GET("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Get, db))
+	r.PATCH("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Update, db))
+	r.DELETE("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Delete, db))
 
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)

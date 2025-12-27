@@ -23,6 +23,8 @@ server:
   words2: words2.txt
   words3: words3.txt
   words4: words4.txt
+storage:
+  document_path: ./documents
 settings:
   user_types:
     - user
