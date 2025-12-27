@@ -78,3 +78,93 @@ func TestService_GetClub_Unauthorized(t *testing.T) {
 		t.Errorf("GetClub should have failed for unauthorized user")
 	}
 }
+
+func TestService_UpdateAndDelete(t *testing.T) {
+	db, _, err := graph.Init("../../../config.example.yml", true)
+	if err != nil {
+		t.Fatalf("could not initialize database: %v", err)
+	}
+	defer db.Database.Remove(context.Background())
+
+	s := NewService(db)
+	ctx := context.Background()
+
+	club := &entities.Club{
+		Name:       "Initial Name",
+		Rechtsform: "e.V.",
+	}
+	userKey := "owner"
+
+	err = s.CreateClub(ctx, club, userKey)
+	if err != nil {
+		t.Fatalf("CreateClub failed: %v", err)
+	}
+	key := club.GetKey()
+
+	// Partial Update 1
+	updates := map[string]interface{}{
+		"name": "Updated Name",
+	}
+	err = s.UpdateClub(ctx, key, updates, userKey)
+	if err != nil {
+		t.Errorf("UpdateClub partial 1 failed: %v", err)
+	}
+
+	// Validate Partial Update 1
+	updated, err := s.GetClub(ctx, key, userKey)
+	if err != nil {
+		t.Fatalf("GetClub failed after partial update 1: %v", err)
+	}
+	if updated.Name != "Updated Name" {
+		t.Errorf("Name not updated: got %s, want %s", updated.Name, "Updated Name")
+	}
+	if updated.Rechtsform != "e.V." {
+		t.Errorf("Rechtsform changed unexpectedly: got %s, want %s", updated.Rechtsform, "e.V.")
+	}
+
+	// Full Update (Partial Update 2 with more fields)
+	updates = map[string]interface{}{
+		"name":       "Final Name",
+		"rechtsform": "GmbH",
+		"email":      "test@example.com",
+		"mitglieder": float64(50),
+		"stimmen":    float64(3),
+	}
+	err = s.UpdateClub(ctx, key, updates, userKey)
+	if err != nil {
+		t.Errorf("UpdateClub partial 2 failed: %v", err)
+	}
+
+	// Validate Full Update
+	updated, err = s.GetClub(ctx, key, userKey)
+	if err != nil {
+		t.Fatalf("GetClub failed after partial update 2: %v", err)
+	}
+	if updated.Name != "Final Name" {
+		t.Errorf("Name not updated: got %s", updated.Name)
+	}
+	if updated.Rechtsform != "GmbH" {
+		t.Errorf("Rechtsform not updated: got %s", updated.Rechtsform)
+	}
+	if updated.Email != "test@example.com" {
+		t.Errorf("Email not updated: got %s", updated.Email)
+	}
+	if updated.Mitglieder != 50 {
+		t.Errorf("Mitglieder not updated: got %d", updated.Mitglieder)
+	}
+	if updated.Stimmen != 3 {
+		t.Errorf("Stimmen not updated: got %d", updated.Stimmen)
+	}
+
+	// Delete
+	err = s.DeleteClub(ctx, key, userKey)
+	if err != nil {
+		t.Errorf("DeleteClub failed: %v", err)
+	}
+
+	// Validate Delete
+	_, err = s.GetClub(ctx, key, userKey)
+	if err == nil {
+		t.Errorf("GetClub should have failed after deletion")
+	}
+}

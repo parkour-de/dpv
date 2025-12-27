@@ -112,6 +112,21 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if sepam, ok := updates["sepamandatsnummer"].(string); ok {
 		club.SEPAMandatsnummer = sepam
 	}
+	if m, ok := updates["mitglieder"].(float64); ok { // JSON numbers are float64
+		club.Mitglieder = int(m)
+	}
+	if s, ok := updates["stimmen"].(float64); ok {
+		club.Stimmen = int(s)
+	}
+	if b, ok := updates["beitrag"].(float64); ok {
+		club.Beitrag = b
+	}
+	if ms, ok := updates["mitgliedsstatus"].(string); ok && ms != "" {
+		club.Mitgliedsstatus = ms
+	}
+	if status, ok := updates["status"].(string); ok && status != "" {
+		club.Status = status
+	}
 
 	return s.DB.UpdateClub(ctx, club)
 }
