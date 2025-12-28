@@ -22,8 +22,8 @@ func (s *Service) CreateClub(ctx context.Context, club *entities.Club, userKey s
 	if club.Name == "" {
 		return t.Errorf("club name must not be empty")
 	}
-	if club.Rechtsform == "" {
-		return t.Errorf("rechtsform must not be empty")
+	if club.LegalForm == "" {
+		return t.Errorf("legal_form must not be empty")
 	}
 
 	// Default status
@@ -92,27 +92,27 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	}
 
 	// Apply updates
-	// Note: Status, Beitrag, Mitglieder, and Stimmen are restricted.
+	// Note: Status, Contribution, Members, and Votes are restricted.
 	if name, ok := updates["name"].(string); ok && name != "" {
 		club.Name = name
 	}
-	if rf, ok := updates["rechtsform"].(string); ok && rf != "" {
-		club.Rechtsform = rf
+	if lf, ok := updates["legal_form"].(string); ok && lf != "" {
+		club.LegalForm = lf
 	}
 	if email, ok := updates["email"].(string); ok {
 		club.Email = email
 	}
-	if ap, ok := updates["ansprechpartner"].(string); ok {
-		club.Ansprechpartner = ap
+	if cp, ok := updates["contact_person"].(string); ok {
+		club.ContactPerson = cp
 	}
 	if iban, ok := updates["iban"].(string); ok {
 		club.Membership.IBAN = iban
 	}
-	if sepam, ok := updates["sepamandatsnummer"].(string); ok {
-		club.Membership.SEPAMandatsnummer = sepam
+	if sepam, ok := updates["sepa_mandate_number"].(string); ok {
+		club.Membership.SEPAMandateNumber = sepam
 	}
-	if addr, ok := updates["adresse"].(string); ok {
-		club.Membership.Adresse = addr
+	if addr, ok := updates["address"].(string); ok {
+		club.Membership.Address = addr
 	}
 
 	return s.DB.UpdateClub(ctx, club)

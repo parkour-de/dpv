@@ -22,8 +22,8 @@ securitySchemes:
         properties:
           email: string
           password: string
-          name: string
-          vorname: string
+          lastname: string
+          firstname: string
     responses:
       200:
         description: User created
@@ -47,8 +47,8 @@ securitySchemes:
         application/json:
           type: object
           properties:
-            name: string
-            vorname: string
+            lastname: string
+            firstname: string
       responses:
         200:
           description: Updated user details
@@ -242,14 +242,14 @@ securitySchemes:
           name:
             type: string
             example: "Parkour Club e.V."
-          rechtsform:
+          legal_form:
             type: string
             example: "e.V."
           email:
             type: string
             required: false
             example: "info@parkour-club.de"
-          adresse:
+          address:
             type: string
             required: false
             example: "Musterstraße 1, 12345 Musterstadt"
@@ -298,7 +298,7 @@ securitySchemes:
               type: string
               required: false
               example: "Parkour Club e.V."
-            rechtsform:
+            legal_form:
               type: string
               required: false
               example: "e.V."
@@ -306,18 +306,18 @@ securitySchemes:
               type: string
               required: false
               example: "info@parkour-club.de"
-            adresse:
+            address:
               type: string
               required: false
               example: "Musterstraße 1, 12345 Musterstadt"
-            ansprechpartner:
+            contact_person:
               type: string
               required: false
               example: "Max Mustermann"
             iban:
               type: string
               required: false
-            sepamandatsnummer:
+            sepa_mandate_number:
               type: string
               required: false
       responses:

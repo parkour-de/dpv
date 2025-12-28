@@ -24,10 +24,10 @@ func NewHandler(service *user.Service) *UserHandler {
 }
 
 type RegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name"`
-	Vorname  string `json:"vorname"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	LastName  string `json:"lastname"`
+	FirstName string `json:"firstname"`
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -38,17 +38,17 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 
 	userEntity := &entities.User{
-		Email:   req.Email,
-		Name:    req.Name,
-		Vorname: req.Vorname,
-		Roles:   []string{"user"},
+		Email:     req.Email,
+		LastName:  req.LastName,
+		FirstName: req.FirstName,
+		Roles:     []string{"user"},
 	}
 
 	err := h.Service.CreateUser(context.Background(), userEntity, req.Password)
 	if err != nil {
 		// Map validation errors to 400, others to 500
 		switch err.Error() {
-		case t.T("vorname must not be empty"), t.T("name must not be empty"), t.T("email must not be empty"), t.T("password must not be empty"):
+		case t.T("firstname must not be empty"), t.T("lastname must not be empty"), t.T("email must not be empty"), t.T("password must not be empty"):
 			api.Error(w, r, err, http.StatusBadRequest)
 			return
 		}
@@ -88,15 +88,15 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 
 	var req struct {
-		Vorname string `json:"vorname,omitempty"`
-		Name    string `json:"name,omitempty"`
+		FirstName string `json:"firstname,omitempty"`
+		LastName  string `json:"lastname,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
 		return
 	}
 
-	err := h.Service.UpdateMe(r.Context(), req.Vorname, req.Name)
+	err := h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -353,8 +353,8 @@ func filteredResponse(userEntity *entities.User) *entities.User {
 			Modified: userEntity.Modified,
 		},
 		Email:      userEntity.Email,
-		Name:       userEntity.Name,
-		Vorname:    userEntity.Vorname,
+		LastName:   userEntity.LastName,
+		FirstName:  userEntity.FirstName,
 		Roles:      userEntity.Roles,
 		Membership: userEntity.Membership,
 	}

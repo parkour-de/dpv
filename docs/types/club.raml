@@ -14,18 +14,18 @@ properties:
   name:
     type: string
     example: "Parkour Club e.V."
-  rechtsform:
+  legal_form:
     type: string
     example: "e.V."
   membership:
     type: Membership
-  mitglieder:
+  members:
     type: integer
     example: 100
-  stimmen:
+  votes:
     type: integer
     example: 5
-  ansprechpartner:
+  contact_person:
     type: string
     required: false
     example: "Max Mustermann"
@@ -36,7 +36,7 @@ properties:
   website_ok:
     type: boolean
     example: true
-  website_pruefung:
+  website_verification:
     type: string
     description: RFC 3339 date
   parent_key:
@@ -46,15 +46,15 @@ properties:
   owner_key:
     type: string
     example: "789"
-  satzung_ok:
+  statutes_ok:
     type: boolean
     required: false
-  satzung_pruefung:
+  statutes_verification:
     type: string
     description: RFC 3339 date
-  register_ok:
+  registry_ok:
     type: boolean
     required: false
-  register_pruefung:
+  registry_verification:
     type: string
     description: RFC 3339 date

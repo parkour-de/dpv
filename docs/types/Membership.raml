@@ -4,16 +4,16 @@ properties:
   iban?:
     type: string
     example: "DE12345678901234567890"
-  sepamandatsnummer?:
+  sepa_mandate_number?:
     type: string
     example: "DPV-12345"
-  beitrag:
+  contribution:
     type: number
     example: 120.50
   status:
     type: string
     enum: [inactive, requested, active, denied, cancelled]
     example: "inactive"
-  adresse?:
+  address?:
     type: string
     example: "Musterstraße 1, 12345 Musterstadt"

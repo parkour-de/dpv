@@ -249,7 +249,7 @@ WICHTIG: Dieser Link ist nur bis zum %s gültig.
 Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail einfach.
 
 © %d Deutscher Parkour Verband`,
-		data.User.Vorname, data.User.Name,
+		data.User.FirstName, data.User.LastName,
 		data.ResetURL, data.ResetURL,
 		expiryBerlin.Format("02.01.2006 um 15:04 Uhr"),
 		time.Now().Year())
@@ -290,7 +290,7 @@ Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail einfac
     </div>
 </body>
 </html>`,
-		data.User.Vorname, data.User.Name,
+		data.User.FirstName, data.User.LastName,
 		data.ResetURL, data.ResetURL, data.ResetURL,
 		expiryBerlin.Format("02.01.2006 um 15:04 Uhr"),
 		time.Now().Year())
@@ -383,7 +383,7 @@ Die DPV-Mitgliederverwaltung ist das offizielle System des Deutschen Parkour Ver
 Bei Fragen wenden Sie sich an: info@parkour-deutschland.de
 
 © %d Deutscher Parkour Verband`,
-		data.User.Vorname, data.User.Name,
+		data.User.FirstName, data.User.LastName,
 		explanationText,
 		actionText,
 		data.ValidationURL, data.ValidationURL,
@@ -435,7 +435,7 @@ func (s *Service) generateHTMLEmail(data ValidationData, actionText, explanation
     </div>
 </body>
 </html>`,
-		data.User.Vorname, data.User.Name,
+		data.User.FirstName, data.User.LastName,
 		explanationText,
 		actionText,
 		data.ValidationURL, data.ValidationURL, data.ValidationURL,

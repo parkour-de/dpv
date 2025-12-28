@@ -60,13 +60,15 @@ func TestRegisterAndGetMe(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Register user
-	reqBody := `{"email":"test@example.com","password":"TestPassword","vorname":"John","name":"Doe"}`
+	reqBody := `{"email":"test@example.com","password":"TestPassword123!","firstname":"John","lastname":"Doe"}`
 	resp, err := http.Post("http://localhost:8082/dpv/users", "application/json", strings.NewReader(reqBody))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		// print error body for debugging
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("expected status 200, got %d. Body: %s", resp.StatusCode, string(b))
 	}
 	resp.Body.Close()
 
@@ -75,7 +77,7 @@ func TestRegisterAndGetMe(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.SetBasicAuth("test@example.com", "TestPassword")
+	req.SetBasicAuth("test@example.com", "TestPassword123!")
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
@@ -89,7 +91,7 @@ func TestRegisterAndGetMe(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(body), `"vorname":"John"`) || !strings.Contains(string(body), `"name":"Doe"`) {
-		t.Errorf("response body does not contain correct vorname and name: %s", string(body))
+	if !strings.Contains(string(body), `"firstname":"John"`) || !strings.Contains(string(body), `"lastname":"Doe"`) {
+		t.Errorf("response body does not contain correct firstname and lastname: %s", string(body))
 	}
 }

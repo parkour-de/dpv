@@ -18,8 +18,8 @@ func TestService_CreateClub(t *testing.T) {
 	s := NewService(db, storage.NewStorage(""))
 
 	club := &entities.Club{
-		Name:       "Test Club",
-		Rechtsform: "e.V.",
+		Name:      "Test Club",
+		LegalForm: "e.V.",
 	}
 
 	userKey := "test-user"
@@ -62,8 +62,8 @@ func TestService_GetClub_Unauthorized(t *testing.T) {
 	s := NewService(db, storage.NewStorage(""))
 
 	club := &entities.Club{
-		Name:       "Test Club",
-		Rechtsform: "e.V.",
+		Name:      "Test Club",
+		LegalForm: "e.V.",
 	}
 
 	ownerKey := "owner"
@@ -91,8 +91,8 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	ctx := context.Background()
 
 	club := &entities.Club{
-		Name:       "Initial Name",
-		Rechtsform: "e.V.",
+		Name:      "Initial Name",
+		LegalForm: "e.V.",
 	}
 	userKey := "owner"
 
@@ -119,17 +119,17 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	if updated.Name != "Updated Name" {
 		t.Errorf("Name not updated: got %s, want %s", updated.Name, "Updated Name")
 	}
-	if updated.Rechtsform != "e.V." {
-		t.Errorf("Rechtsform changed unexpectedly: got %s, want %s", updated.Rechtsform, "e.V.")
+	if updated.LegalForm != "e.V." {
+		t.Errorf("LegalForm changed unexpectedly: got %s, want %s", updated.LegalForm, "e.V.")
 	}
 
 	// Full Update (Partial Update 2 with more fields)
 	updates = map[string]interface{}{
 		"name":       "Final Name",
-		"rechtsform": "GmbH",
+		"legal_form": "GmbH",
 		"email":      "test@example.com",
-		"mitglieder": float64(50),
-		"stimmen":    float64(3),
+		"members":    float64(50),
+		"votes":      float64(3),
 	}
 	err = s.UpdateClub(ctx, key, updates, userKey)
 	if err != nil {
@@ -144,18 +144,18 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	if updated.Name != "Final Name" {
 		t.Errorf("Name not updated: got %s", updated.Name)
 	}
-	if updated.Rechtsform != "GmbH" {
-		t.Errorf("Rechtsform not updated: got %s", updated.Rechtsform)
+	if updated.LegalForm != "GmbH" {
+		t.Errorf("LegalForm not updated: got %s", updated.LegalForm)
 	}
 	if updated.Email != "test@example.com" {
 		t.Errorf("Email not updated: got %s", updated.Email)
 	}
-	// Note: Mitglieder and Stimmen should NOT be updated via UpdateClub
-	if updated.Mitglieder != 0 {
-		t.Errorf("Mitglieder SHOULD NOT be updated via PATCH: got %d, want 0", updated.Mitglieder)
+	// Note: Members and Votes should NOT be updated via UpdateClub
+	if updated.Members != 0 {
+		t.Errorf("Members SHOULD NOT be updated via PATCH: got %d, want 0", updated.Members)
 	}
-	if updated.Stimmen != 0 {
-		t.Errorf("Stimmen SHOULD NOT be updated via PATCH: got %d, want 0", updated.Stimmen)
+	if updated.Votes != 0 {
+		t.Errorf("Votes SHOULD NOT be updated via PATCH: got %d, want 0", updated.Votes)
 	}
 
 	// Delete

@@ -20,10 +20,10 @@ func NewHandler(service *club.Service) *ClubHandler {
 }
 
 type CreateClubRequest struct {
-	Name       string `json:"name"`
-	Rechtsform string `json:"rechtsform"`
-	Email      string `json:"email,omitempty"`
-	Adresse    string `json:"adresse,omitempty"`
+	Name      string `json:"name"`
+	LegalForm string `json:"legal_form"`
+	Email     string `json:"email,omitempty"`
+	Address   string `json:"address,omitempty"`
 }
 
 func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -40,10 +40,10 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 	}
 
 	clubEntity := &entities.Club{
-		Name:       req.Name,
-		Rechtsform: req.Rechtsform,
+		Name:      req.Name,
+		LegalForm: req.LegalForm,
 		Membership: entities.Membership{
-			Adresse: req.Adresse,
+			Address: req.Address,
 		},
 		Email: req.Email,
 	}
@@ -124,25 +124,25 @@ func FilteredResponse(clubEntity *entities.Club) *entities.Club {
 			Created:  clubEntity.Created,
 			Modified: clubEntity.Modified,
 		},
-		Name:       clubEntity.Name,
-		Rechtsform: clubEntity.Rechtsform,
+		Name:      clubEntity.Name,
+		LegalForm: clubEntity.LegalForm,
 		Membership: entities.Membership{
-			Status:  clubEntity.Membership.Status,
-			Beitrag: clubEntity.Membership.Beitrag,
-			Adresse: clubEntity.Membership.Adresse,
+			Status:       clubEntity.Membership.Status,
+			Contribution: clubEntity.Membership.Contribution,
+			Address:      clubEntity.Membership.Address,
 		},
-		Mitglieder:       clubEntity.Mitglieder,
-		Stimmen:          clubEntity.Stimmen,
-		Ansprechpartner:  clubEntity.Ansprechpartner,
-		Email:            clubEntity.Email,
-		WebsiteOK:        clubEntity.WebsiteOK,
-		WebsitePruefung:  clubEntity.WebsitePruefung,
-		ParentKey:        clubEntity.ParentKey,
-		OwnerKey:         clubEntity.OwnerKey,
-		SatzungOK:        clubEntity.SatzungOK,
-		SatzungPruefung:  clubEntity.SatzungPruefung,
-		RegisterOK:       clubEntity.RegisterOK,
-		RegisterPruefung: clubEntity.RegisterPruefung,
+		Members:              clubEntity.Members,
+		Votes:                clubEntity.Votes,
+		ContactPerson:        clubEntity.ContactPerson,
+		Email:                clubEntity.Email,
+		WebsiteOK:            clubEntity.WebsiteOK,
+		WebsiteVerification:  clubEntity.WebsiteVerification,
+		ParentKey:            clubEntity.ParentKey,
+		OwnerKey:             clubEntity.OwnerKey,
+		StatutesOK:           clubEntity.StatutesOK,
+		StatutesVerification: clubEntity.StatutesVerification,
+		RegistryOK:           clubEntity.RegistryOK,
+		RegistryVerification: clubEntity.RegistryVerification,
 	}
 	// Note: IBAN and SEPAMandatsnummer are omitted here for security/privacy in general views
 	return resp

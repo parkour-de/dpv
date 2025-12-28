@@ -25,11 +25,11 @@ func TestCreateUser_Validation(t *testing.T) {
 		password string
 		errMsg   string
 	}{
-		{entities.User{Vorname: "", Name: "N", Email: "e"}, "StrongPass1!", T.T("vorname must not be empty")},
-		{entities.User{Vorname: "V", Name: "", Email: "e"}, "StrongPass1!", T.T("name must not be empty")},
-		{entities.User{Vorname: "V", Name: "N", Email: ""}, "StrongPass1!", T.T("email must not be empty")},
-		{entities.User{Vorname: "V", Name: "N", Email: "e"}, "", T.T("password must not be empty")},
-		{entities.User{Vorname: "V", Name: "N", Email: "e"}, "1234567890", T.T("must not be only digits")},
+		{entities.User{FirstName: "", LastName: "N", Email: "e"}, "StrongPass1!", T.T("firstname must not be empty")},
+		{entities.User{FirstName: "V", LastName: "", Email: "e"}, "StrongPass1!", T.T("lastname must not be empty")},
+		{entities.User{FirstName: "V", LastName: "N", Email: ""}, "StrongPass1!", T.T("email must not be empty")},
+		{entities.User{FirstName: "V", LastName: "N", Email: "e"}, "", T.T("password must not be empty")},
+		{entities.User{FirstName: "V", LastName: "N", Email: "e"}, "1234567890", T.T("must not be only digits")},
 	}
 	for _, c := range cases {
 		err := service.CreateUser(ctx, &c.user, c.password)
@@ -49,8 +49,8 @@ func TestCreateUser_DuplicateEmail(t *testing.T) {
 	service := setupTestService(t)
 	ctx := context.Background()
 
-	user1 := &entities.User{Vorname: "V", Name: "N", Email: "duplicate@example.com"}
-	user2 := &entities.User{Vorname: "V", Name: "N", Email: "duplicate@example.com"}
+	user1 := &entities.User{FirstName: "V", LastName: "N", Email: "duplicate@example.com"}
+	user2 := &entities.User{FirstName: "V", LastName: "N", Email: "duplicate@example.com"}
 	password := "StrongPass1!"
 
 	// First creation should succeed

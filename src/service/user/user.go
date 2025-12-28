@@ -21,11 +21,11 @@ func NewService(db *graph.Db) *Service {
 }
 
 func (s *Service) CreateUser(ctx context.Context, user *entities.User, password string) error {
-	if user.Vorname == "" {
-		return t.Errorf("vorname must not be empty")
+	if user.FirstName == "" {
+		return t.Errorf("firstname must not be empty")
 	}
-	if user.Name == "" {
-		return t.Errorf("name must not be empty")
+	if user.LastName == "" {
+		return t.Errorf("lastname must not be empty")
 	}
 	if user.Email == "" {
 		return t.Errorf("email must not be empty")
@@ -53,18 +53,18 @@ func (s *Service) CreateUser(ctx context.Context, user *entities.User, password 
 	return s.DB.Users.Create(user, ctx)
 }
 
-func (s *Service) UpdateMe(ctx context.Context, newVorname, newName string) error {
+func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName string) error {
 	user, ok := ctx.Value("user").(*entities.User)
 	if !ok || user == nil {
 		return t.Errorf("user not found in context")
 	}
 	updated := false
-	if newVorname != "" {
-		user.Vorname = newVorname
+	if newFirstName != "" {
+		user.FirstName = newFirstName
 		updated = true
 	}
-	if newName != "" {
-		user.Name = newName
+	if newLastName != "" {
+		user.LastName = newLastName
 		updated = true
 	}
 	if !updated {

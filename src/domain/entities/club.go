@@ -5,21 +5,21 @@ import "time"
 // Club represents a Verein or Organisation
 type Club struct {
 	Entity
-	Name             string     `json:"name"`
-	Rechtsform       string     `json:"rechtsform"` // e.V., GmbH, etc.
-	Membership       Membership `json:"membership"`
-	Mitglieder       int        `json:"mitglieder"` // Number of members for contribution calc
-	Stimmen          int        `json:"stimmen"`    // Votes in assembly, updated post-upload
-	Ansprechpartner  string     `json:"ansprechpartner,omitempty"`
-	Email            string     `json:"email,omitempty"`
-	WebsiteOK        bool       `json:"website_ok"`
-	WebsitePruefung  time.Time  `json:"website_pruefung"`
-	ParentKey        string     `json:"parent_key,omitempty"` // For recursive SubsidiaryOf edge
-	OwnerKey         string     `json:"owner_key"`            // Initial creator (User key)
-	SatzungOK        bool       `json:"satzung_ok,omitempty"`
-	SatzungPruefung  time.Time  `json:"satzung_pruefung"`
-	RegisterOK       bool       `json:"register_ok,omitempty"`
-	RegisterPruefung time.Time  `json:"register_pruefung"`
+	Name                 string     `json:"name"`
+	LegalForm            string     `json:"legal_form"` // e.V., GmbH, etc.
+	Membership           Membership `json:"membership"`
+	Members              int        `json:"members"` // Number of members for contribution calc
+	Votes                int        `json:"votes"`   // Votes in assembly, updated post-upload
+	ContactPerson        string     `json:"contact_person,omitempty"`
+	Email                string     `json:"email,omitempty"`
+	WebsiteOK            bool       `json:"website_ok"`
+	WebsiteVerification  time.Time  `json:"website_verification"`
+	ParentKey            string     `json:"parent_key,omitempty"` // For recursive SubsidiaryOf edge
+	OwnerKey             string     `json:"owner_key"`            // Initial creator (User key)
+	StatutesOK           bool       `json:"statutes_ok,omitempty"`
+	StatutesVerification time.Time  `json:"statutes_verification"`
+	RegistryOK           bool       `json:"registry_ok,omitempty"`
+	RegistryVerification time.Time  `json:"registry_verification"`
 }
 
 func (c *Club) GetMembership() *Membership {
