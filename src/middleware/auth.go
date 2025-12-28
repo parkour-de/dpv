@@ -14,7 +14,6 @@ func CORSMiddleware(next httprouter.Handle) httprouter.Handle {
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-altcha-spam-filter")
-		// If Origin is present, set it. Otherwise allow all? No, allow origin from request is standard for dev/local.
 
 		next(w, r, ps)
 	}

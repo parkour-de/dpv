@@ -51,14 +51,12 @@ func NewServer(configPath string, test bool) *http.Server {
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
-			// Set CORS headers
 			header := w.Header()
 			header.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 			header.Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 			header.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-altcha-spam-filter")
 		}
 
-		// Adjust status code to 204
 		w.WriteHeader(http.StatusNoContent)
 	})
 
