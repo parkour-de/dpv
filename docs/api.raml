@@ -55,25 +55,6 @@ securitySchemes:
           body:
             application/json:
               type: User
-  /{key}/roles:
-    patch:
-      description: Update a user's roles (Admin only)
-      securedBy: [ basicAuth ]
-      body:
-        application/json:
-          type: object
-          properties:
-            roles:
-              type: string[]
-              example: ["admin", "active-admin"]
-      responses:
-        200:
-          description: Roles updated successfully
-          body:
-            application/json:
-              type: User
-        403:
-          description: Forbidden - requires global admin
   /request-email-validation:
     post:
       description: Request a validation email for the user's email address. Requires authentication.
@@ -138,6 +119,7 @@ securitySchemes:
           body:
             application/json:
               type: ErrorResponse
+
   /request-password-reset:
     post:
       description: Request a password reset email for the given email address.
@@ -229,6 +211,26 @@ securitySchemes:
           body:
             application/json:
               type: ErrorResponse
+/admin/users/{key}/roles:
+  patch:
+    description: Update a user's roles (Admin only)
+    securedBy: [ basicAuth ]
+    body:
+      application/json:
+        type: object
+        properties:
+          roles:
+            type: string[]
+            example: ["admin", "active-admin"]
+    responses:
+      200:
+        description: Roles updated successfully
+        body:
+          application/json:
+            type: User
+      403:
+        description: Forbidden - requires global admin
+
 /clubs:
   securedBy: [ basicAuth ]
   post:

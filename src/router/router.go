@@ -68,11 +68,10 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.POST("/dpv/users/request-email-validation", middleware.BasicAuthMiddleware(userHandler.RequestEmailValidation, db))
 	r.GET("/dpv/users/validate-email", userHandler.ValidateEmail)
 
-	// Add password reset endpoints
 	r.POST("/dpv/users/request-password-reset", userHandler.RequestPasswordReset)
 	r.GET("/dpv/users/reset-password", userHandler.ShowResetPasswordForm)
 	r.POST("/dpv/users/reset-password", userHandler.HandleResetPassword)
-	r.PATCH("/dpv/users/:key/roles", userHandler.UpdateRoles)
+	r.PATCH("/dpv/admin/users/:key/roles", userHandler.UpdateRoles)
 
 	r.POST("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.Create, db))
 	r.GET("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.List, db))

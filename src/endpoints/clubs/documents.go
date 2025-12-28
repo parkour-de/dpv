@@ -63,7 +63,7 @@ func (h *ClubHandler) UploadDocument(w http.ResponseWriter, r *http.Request, ps 
 	}
 
 	api.SuccessJson(w, r, map[string]string{
-		"message":  "document uploaded successfully",
+		"message":  t.T("document uploaded successfully"),
 		"filename": filename,
 	})
 }

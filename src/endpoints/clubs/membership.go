@@ -24,7 +24,7 @@ func (h *ClubHandler) Apply(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	api.SuccessJson(w, r, map[string]string{"message": "application submitted"})
+	api.SuccessJson(w, r, map[string]string{"message": t.T("application submitted")})
 }
 
 // Approve handles membership approval (Admin only).
@@ -42,7 +42,7 @@ func (h *ClubHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	api.SuccessJson(w, r, map[string]string{"message": "membership approved"})
+	api.SuccessJson(w, r, map[string]string{"message": t.T("membership approved")})
 }
 
 // Deny handles membership denial (Admin only).
@@ -60,7 +60,7 @@ func (h *ClubHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	api.SuccessJson(w, r, map[string]string{"message": "membership denied"})
+	api.SuccessJson(w, r, map[string]string{"message": t.T("membership denied")})
 }
 
 // Cancel handles membership cancellation.
@@ -78,5 +78,5 @@ func (h *ClubHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	api.SuccessJson(w, r, map[string]string{"message": "membership cancelled/reset"})
+	api.SuccessJson(w, r, map[string]string{"message": t.T("membership cancelled/reset")})
 }
