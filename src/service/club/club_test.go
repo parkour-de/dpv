@@ -4,6 +4,7 @@ import (
 	"context"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/graph"
+	"dpv/dpv/src/repository/storage"
 	"testing"
 )
 
@@ -14,7 +15,7 @@ func TestService_CreateClub(t *testing.T) {
 	}
 	defer db.Database.Remove(context.Background())
 
-	s := NewService(db)
+	s := NewService(db, storage.NewStorage(""))
 
 	club := &entities.Club{
 		Name:       "Test Club",
@@ -58,7 +59,7 @@ func TestService_GetClub_Unauthorized(t *testing.T) {
 	}
 	defer db.Database.Remove(context.Background())
 
-	s := NewService(db)
+	s := NewService(db, storage.NewStorage(""))
 
 	club := &entities.Club{
 		Name:       "Test Club",
@@ -86,7 +87,7 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	}
 	defer db.Database.Remove(context.Background())
 
-	s := NewService(db)
+	s := NewService(db, storage.NewStorage(""))
 	ctx := context.Background()
 
 	club := &entities.Club{

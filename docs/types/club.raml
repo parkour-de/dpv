@@ -20,18 +20,14 @@ properties:
   status:
     type: string
     example: "aktiv"
-  mitgliedsstatus:
-    type: string
-    example: "mitglied"
+  membership:
+    type: Membership
   mitglieder:
     type: integer
     example: 100
   stimmen:
     type: integer
     example: 5
-  beitrag:
-    type: number
-    example: 120.50
   ansprechpartner:
     type: string
     required: false
@@ -40,13 +36,12 @@ properties:
     type: string
     required: false
     example: "info@parkour-club.de"
-  adresse:
-    type: string
-    required: false
-    example: "Musterstraße 1, 12345 Musterstadt"
   website_ok:
     type: boolean
     example: true
+  website_pruefung:
+    type: string
+    description: RFC 3339 date
   parent_key:
     type: string
     required: false
@@ -54,3 +49,15 @@ properties:
   owner_key:
     type: string
     example: "789"
+  satzung_ok:
+    type: boolean
+    required: false
+  satzung_pruefung:
+    type: string
+    description: RFC 3339 date
+  register_ok:
+    type: boolean
+    required: false
+  register_pruefung:
+    type: string
+    description: RFC 3339 date

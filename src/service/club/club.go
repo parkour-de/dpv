@@ -4,15 +4,17 @@ import (
 	"context"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/graph"
+	"dpv/dpv/src/repository/storage"
 	"dpv/dpv/src/repository/t"
 )
 
 type Service struct {
-	DB *graph.Db
+	DB      *graph.Db
+	Storage *storage.Storage
 }
 
-func NewService(db *graph.Db) *Service {
-	return &Service{DB: db}
+func NewService(db *graph.Db, st *storage.Storage) *Service {
+	return &Service{DB: db, Storage: st}
 }
 
 // CreateClub performs business validation and creates a new club.
@@ -26,8 +28,8 @@ func (s *Service) CreateClub(ctx context.Context, club *entities.Club, userKey s
 
 	// Default status
 	club.Status = "aktiv"
-	if club.Mitgliedsstatus == "" {
-		club.Mitgliedsstatus = "anwärter"
+	if club.Membership.Mitgliedsstatus == "" {
+		club.Membership.Mitgliedsstatus = "none"
 	}
 	club.OwnerKey = userKey
 
@@ -100,17 +102,14 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if email, ok := updates["email"].(string); ok {
 		club.Email = email
 	}
-	if addr, ok := updates["adresse"].(string); ok {
-		club.Adresse = addr
-	}
 	if ap, ok := updates["ansprechpartner"].(string); ok {
 		club.Ansprechpartner = ap
 	}
 	if iban, ok := updates["iban"].(string); ok {
-		club.IBAN = iban
+		club.Membership.IBAN = iban
 	}
 	if sepam, ok := updates["sepamandatsnummer"].(string); ok {
-		club.SEPAMandatsnummer = sepam
+		club.Membership.SEPAMandatsnummer = sepam
 	}
 	if m, ok := updates["mitglieder"].(float64); ok { // JSON numbers are float64
 		club.Mitglieder = int(m)
@@ -119,13 +118,16 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 		club.Stimmen = int(s)
 	}
 	if b, ok := updates["beitrag"].(float64); ok {
-		club.Beitrag = b
+		club.Membership.Beitrag = b
 	}
 	if ms, ok := updates["mitgliedsstatus"].(string); ok && ms != "" {
-		club.Mitgliedsstatus = ms
+		club.Membership.Mitgliedsstatus = ms
 	}
 	if status, ok := updates["status"].(string); ok && status != "" {
 		club.Status = status
+	}
+	if addr, ok := updates["adresse"].(string); ok {
+		club.Membership.Adresse = addr
 	}
 
 	return s.DB.UpdateClub(ctx, club)

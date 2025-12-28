@@ -7,6 +7,7 @@ import (
 	"dpv/dpv/src/middleware"
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
+	"dpv/dpv/src/repository/storage"
 	"dpv/dpv/src/repository/t"
 	"dpv/dpv/src/service/club"
 	"dpv/dpv/src/service/user"
@@ -44,7 +45,8 @@ func NewServer(configPath string, test bool) *http.Server {
 	userService := user.NewService(db)
 	userHandler := users.NewHandler(userService)
 
-	clubService := club.NewService(db)
+	st := storage.NewStorage(dpv.ConfigInstance.Storage.DocumentPath)
+	clubService := club.NewService(db, st)
 	clubHandler := clubs.NewHandler(clubService)
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -70,12 +72,19 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.POST("/dpv/users/request-password-reset", userHandler.RequestPasswordReset)
 	r.GET("/dpv/users/reset-password", userHandler.ShowResetPasswordForm)
 	r.POST("/dpv/users/reset-password", userHandler.HandleResetPassword)
+	r.PATCH("/dpv/users/:key/roles", userHandler.UpdateRoles)
 
 	r.POST("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.Create, db))
 	r.GET("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.List, db))
 	r.GET("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Get, db))
 	r.PATCH("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Update, db))
 	r.DELETE("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Delete, db))
+
+	r.POST("/dpv/clubs/:key/apply", middleware.BasicAuthMiddleware(clubHandler.Apply, db))
+	r.POST("/dpv/clubs/:key/approve", middleware.BasicAuthMiddleware(clubHandler.Approve, db))
+	r.POST("/dpv/clubs/:key/deny", middleware.BasicAuthMiddleware(clubHandler.Deny, db))
+	r.POST("/dpv/clubs/:key/cancel", middleware.BasicAuthMiddleware(clubHandler.Cancel, db))
+	r.POST("/dpv/clubs/:key/documents", middleware.BasicAuthMiddleware(clubHandler.UploadDocument, db))
 
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)

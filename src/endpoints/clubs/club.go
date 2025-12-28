@@ -41,11 +41,13 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 	}
 
 	clubEntity := &entities.Club{
-		Name:            req.Name,
-		Rechtsform:      req.Rechtsform,
-		Mitgliedsstatus: req.Mitgliedsstatus,
-		Email:           req.Email,
-		Adresse:         req.Adresse,
+		Name:       req.Name,
+		Rechtsform: req.Rechtsform,
+		Membership: entities.Membership{
+			Mitgliedsstatus: req.Mitgliedsstatus,
+			Adresse:         req.Adresse,
+		},
+		Email: req.Email,
 	}
 
 	err := h.Service.CreateClub(r.Context(), clubEntity, user.Key)
@@ -54,28 +56,7 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 		return
 	}
 
-	api.SuccessJson(w, r, filteredResponse(clubEntity))
-}
-
-func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
-		return
-	}
-
-	clubs, err := h.Service.ListClubs(r.Context(), user.Key)
-	if err != nil {
-		api.Error(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	var resp []entities.Club
-	for _, c := range clubs {
-		resp = append(resp, *filteredResponse(&c))
-	}
-
-	api.SuccessJson(w, r, resp)
+	api.SuccessJson(w, r, FilteredResponse(clubEntity))
 }
 
 func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -92,7 +73,7 @@ func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	api.SuccessJson(w, r, filteredResponse(club))
+	api.SuccessJson(w, r, FilteredResponse(club))
 }
 
 func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -116,7 +97,7 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	club, _ := h.Service.GetClub(r.Context(), key, user.Key)
-	api.SuccessJson(w, r, filteredResponse(club))
+	api.SuccessJson(w, r, FilteredResponse(club))
 }
 
 func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -136,7 +117,7 @@ func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprout
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func filteredResponse(clubEntity *entities.Club) *entities.Club {
+func FilteredResponse(clubEntity *entities.Club) *entities.Club {
 	// For Phase 3.1, suppress sensitive fields like IBAN if desired,
 	// but here we return most fields except internal ones if needed.
 	resp := &entities.Club{
@@ -145,16 +126,18 @@ func filteredResponse(clubEntity *entities.Club) *entities.Club {
 			Created:  clubEntity.Created,
 			Modified: clubEntity.Modified,
 		},
-		Name:             clubEntity.Name,
-		Rechtsform:       clubEntity.Rechtsform,
-		Status:           clubEntity.Status,
-		Mitgliedsstatus:  clubEntity.Mitgliedsstatus,
+		Name:       clubEntity.Name,
+		Rechtsform: clubEntity.Rechtsform,
+		Status:     clubEntity.Status,
+		Membership: entities.Membership{
+			Mitgliedsstatus: clubEntity.Membership.Mitgliedsstatus,
+			Beitrag:         clubEntity.Membership.Beitrag,
+			Adresse:         clubEntity.Membership.Adresse,
+		},
 		Mitglieder:       clubEntity.Mitglieder,
 		Stimmen:          clubEntity.Stimmen,
-		Beitrag:          clubEntity.Beitrag,
 		Ansprechpartner:  clubEntity.Ansprechpartner,
 		Email:            clubEntity.Email,
-		Adresse:          clubEntity.Adresse,
 		WebsiteOK:        clubEntity.WebsiteOK,
 		WebsitePruefung:  clubEntity.WebsitePruefung,
 		ParentKey:        clubEntity.ParentKey,

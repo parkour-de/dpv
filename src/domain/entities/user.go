@@ -10,5 +10,9 @@ type User struct {
 	Vorname       string     `json:"vorname"`
 	Roles         []string   `json:"roles"`
 	EmailVerified *time.Time `json:"email_verified,omitempty"`
-	// Address fields...
+	Membership    Membership `json:"membership"`
+}
+
+func (u *User) GetMembership() *Membership {
+	return &u.Membership
 }

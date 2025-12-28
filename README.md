@@ -18,8 +18,8 @@ This API serves as the backbone for a comprehensive membership management platfo
 - ✅ **HTTP Basic Authentication**: Stateless authentication for API requests
 - ✅ **Email Verification**: Secure email verification and change workflows
 - ✅ **Password Reset**: Self-service password reset with secure token-based links
-- 🚧 **Club Management**: Create and manage parkour clubs and organizations (in development)
-- 🚧 **Membership Applications**: Apply for and process DPV memberships (planned)
+- ✅ **Club Management**: Create and manage parkour clubs and organizations
+- ✅ **Membership Applications**: Apply for and process DPV memberships
 - 🚧 **Graph Relationships**: Handle complex organizational hierarchies (planned)
 
 ## Technology Stack
@@ -46,10 +46,12 @@ src/
 │   ├── dpv/              # Configuration management
 │   ├── graph/            # ArangoDB connection and queries
 │   ├── security/         # Password hashing and token generation
+│   ├── storage/          # Structured document storage
 │   └── t/                # Translation and error handling
 ├── router/               # HTTP routing setup
 └── service/              # Business logic layer
-└── user/             # User business logic
+    ├── club/            # Club and membership logic
+    └── user/            # User business logic
 ```
 
 ## Prerequisites
@@ -128,6 +130,17 @@ The API will be available at `http://localhost:8080` (or your specified port).
 ### Authenticated Endpoints (require HTTP Basic Auth)
 
 - `GET /dpv/users/me` - Get current user profile
+- `PATCH /dpv/users/:key/roles` - Update user roles (Admin only)
+- `GET /dpv/clubs` - List clubs (with pagination/filtering)
+- `POST /dpv/clubs` - Create a new club
+- `GET /dpv/clubs/:key` - Get club details
+- `PATCH /dpv/clubs/:key` - Update club details
+- `DELETE /dpv/clubs/:key` - Delete a club
+- `POST /dpv/clubs/:key/apply` - Apply for membership
+- `POST /dpv/clubs/:key/approve` - Approve membership (Admin only)
+- `POST /dpv/clubs/:key/deny` - Deny membership (Admin only)
+- `POST /dpv/clubs/:key/cancel` - Cancel/reset membership
+- `POST /dpv/clubs/:key/documents` - Upload club documents
 
 ### Example Usage
 
@@ -246,15 +259,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] Password reset workflows
 - [x] User profile updates
 
-### Phase 3: Club Management 📋
-- [ ] Club/organization creation
-- [ ] Membership roles and permissions
-- [ ] Document upload and verification
+### Phase 3: Club Management ✅
+- [x] Club/organization creation
+- [x] Membership roles and permissions
+- [x] Document upload and verification
 
-### Phase 4: Membership Processing 📋
-- [ ] Membership applications
-- [ ] Approval workflows
-- [ ] Fee calculation and management
+### Phase 4: Membership Processing ✅
+- [x] Membership applications
+- [x] Approval workflows
+- [ ] Fee calculation and management (planned)
 
 ### Phase 5: Graph Relationships 📋
 - [ ] Hierarchical organization support (Landesverbände)

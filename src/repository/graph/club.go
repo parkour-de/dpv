@@ -5,9 +5,17 @@ import (
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
 
+	"math"
+
 	"github.com/arangodb/go-driver/v2/arangodb"
 	"github.com/arangodb/go-driver/v2/arangodb/shared"
 )
+
+type ClubQueryOptions struct {
+	Skip            int
+	Limit           int
+	Mitgliedsstatus string
+}
 
 // CreateClub creates a club and an 'authorizes' edge for the creator.
 func (db *Db) CreateClub(ctx context.Context, club *entities.Club, userKey string) error {
@@ -78,4 +86,49 @@ func (db *Db) UpdateClub(ctx context.Context, club *entities.Club) error {
 // DeleteClub deletes a club.
 func (db *Db) DeleteClub(ctx context.Context, club *entities.Club) error {
 	return db.Clubs.Delete(club, ctx)
+}
+
+// GetClubs returns all clubs matching the options.
+func (db *Db) GetClubs(ctx context.Context, options ClubQueryOptions) ([]entities.Club, error) {
+	query, bindVars := buildClubQuery(options)
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return nil, t.Errorf("query for clubs failed: %w", err)
+	}
+	defer cursor.Close()
+
+	var result []entities.Club
+	for {
+		var doc entities.Club
+		_, err := cursor.ReadDocument(ctx, &doc)
+		if shared.IsNoMoreDocuments(err) {
+			break
+		} else if err != nil {
+			return nil, t.Errorf("obtaining club document failed: %w", err)
+		}
+		result = append(result, doc)
+	}
+
+	return result, nil
+}
+
+func buildClubQuery(options ClubQueryOptions) (string, map[string]interface{}) {
+	var query string
+	bindVars := map[string]interface{}{}
+	query += "FOR club IN clubs\n"
+	if options.Mitgliedsstatus != "" {
+		query += "  FILTER club.membership.mitgliedsstatus == @status\n"
+		bindVars["status"] = options.Mitgliedsstatus
+	}
+	query += "  SORT club.name\n"
+	if options.Skip > 0 || options.Limit > 0 {
+		if options.Limit == 0 {
+			options.Limit = math.MaxInt32
+		}
+		query += "  LIMIT @skip, @limit\n"
+		bindVars["skip"] = options.Skip
+		bindVars["limit"] = options.Limit
+	}
+	query += "  RETURN club"
+	return query, bindVars
 }

@@ -211,3 +211,12 @@ func (s *Service) ValidatePasswordReset(ctx context.Context, userKey string, exp
 	user.PasswordHash = hash
 	return s.DB.Users.Update(user, ctx)
 }
+func (s *Service) UpdateRoles(ctx context.Context, userKey string, roles []string) error {
+	user, err := s.DB.Users.Read(userKey, ctx)
+	if err != nil {
+		return t.Errorf("user not found: %w", err)
+	}
+
+	user.Roles = roles
+	return s.DB.Users.Update(user, ctx)
+}

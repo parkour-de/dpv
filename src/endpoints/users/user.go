@@ -312,6 +312,39 @@ func (h *UserHandler) HandleResetPassword(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// UpdateRoles allows an admin to update a user's roles
+func (h *UserHandler) UpdateRoles(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	key := ps.ByName("key")
+	var req struct {
+		Roles []string `json:"roles"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
+		return
+	}
+
+	err = h.Service.UpdateRoles(r.Context(), key, req.Roles)
+	if err != nil {
+		api.Error(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	// Fetch updated user to return
+	updatedUser, err := h.Service.DB.Users.Read(key, r.Context())
+	if err != nil {
+		api.Error(w, r, t.Errorf("could not retrieve updated user"), http.StatusInternalServerError)
+		return
+	}
+
+	api.SuccessJson(w, r, filteredResponse(updatedUser))
+}
+
 func filteredResponse(userEntity *entities.User) *entities.User {
 	resp := &entities.User{
 		Entity: entities.Entity{
@@ -319,10 +352,11 @@ func filteredResponse(userEntity *entities.User) *entities.User {
 			Created:  userEntity.Created,
 			Modified: userEntity.Modified,
 		},
-		Email:   userEntity.Email,
-		Name:    userEntity.Name,
-		Vorname: userEntity.Vorname,
-		Roles:   userEntity.Roles,
+		Email:      userEntity.Email,
+		Name:       userEntity.Name,
+		Vorname:    userEntity.Vorname,
+		Roles:      userEntity.Roles,
+		Membership: userEntity.Membership,
 	}
 	return resp
 }

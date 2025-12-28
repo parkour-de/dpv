@@ -7,6 +7,7 @@ mediaType: application/json
 types:
   User: !include types/User.raml
   Club: !include types/Club.raml
+  Membership: !include types/Membership.raml
   ErrorResponse: !include types/errorResponse.raml
 securitySchemes:
   basicAuth:
@@ -54,6 +55,25 @@ securitySchemes:
           body:
             application/json:
               type: User
+  /{key}/roles:
+    patch:
+      description: Update a user's roles (Admin only)
+      securedBy: [ basicAuth ]
+      body:
+        application/json:
+          type: object
+          properties:
+            roles:
+              type: string[]
+              example: ["admin", "active-admin"]
+      responses:
+        200:
+          description: Roles updated successfully
+          body:
+            application/json:
+              type: User
+        403:
+          description: Forbidden - requires global admin
   /request-email-validation:
     post:
       description: Request a validation email for the user's email address. Requires authentication.
@@ -242,7 +262,17 @@ securitySchemes:
           application/json:
             type: Club
   get:
-    description: List clubs administered by the current user
+    description: List clubs. Admins see all clubs with pagination/filtering; users see clubs they administer.
+    queryParameters:
+      status?:
+        type: string
+        description: Filter by Mitgliedsstatus (none, requested, approved, denied, cancelled)
+      skip?:
+        type: integer
+        default: 0
+      limit?:
+        type: integer
+        default: 100
     responses:
       200:
         description: List of clubs
@@ -290,6 +320,10 @@ securitySchemes:
               type: integer
               required: false
               example: 5
+            mitgliedsstatus:
+              type: string
+              required: false
+              enum: [none, requested, approved, denied, cancelled]
       responses:
         200:
           description: Updated club details
@@ -301,6 +335,48 @@ securitySchemes:
       responses:
         204:
           description: Club deleted
+    /apply:
+      post:
+        description: Apply for membership
+        responses:
+          200:
+            description: Application submitted
+    /approve:
+      post:
+        description: Approve membership application (Admin only)
+        responses:
+          200:
+            description: Membership approved
+    /deny:
+      post:
+        description: Deny membership application (Admin only)
+        responses:
+          200:
+            description: Membership denied
+    /cancel:
+      post:
+        description: Cancel or reset membership
+        responses:
+          200:
+            description: Membership cancelled/reset
+    /documents:
+      post:
+        description: Upload a document for the club
+        body:
+          multipart/form-data:
+            properties:
+              document:
+                type: file
+                description: The document to upload
+        responses:
+          200:
+            description: Document uploaded successfully
+            body:
+              application/json:
+                type: object
+                properties:
+                  message: string
+                  filename: string
 
 /version:
   get:
