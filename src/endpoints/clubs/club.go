@@ -7,6 +7,7 @@ import (
 	"dpv/dpv/src/service/club"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -38,6 +39,11 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
 		return
 	}
+
+	req.Name = strings.TrimSpace(req.Name)
+	req.LegalForm = strings.TrimSpace(req.LegalForm)
+	req.Email = strings.TrimSpace(req.Email)
+	req.Address = strings.TrimSpace(req.Address)
 
 	clubEntity := &entities.Club{
 		Name:      req.Name,
@@ -86,6 +92,12 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
 		return
+	}
+
+	for k, v := range updates {
+		if s, ok := v.(string); ok {
+			updates[k] = strings.TrimSpace(s)
+		}
 	}
 
 	err := h.Service.UpdateClub(r.Context(), key, updates, user.Key)

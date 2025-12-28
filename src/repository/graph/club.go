@@ -84,7 +84,31 @@ func (db *Db) UpdateClub(ctx context.Context, club *entities.Club) error {
 }
 
 // DeleteClub deletes a club.
+// DeleteClub deletes a club and its associated edges.
 func (db *Db) DeleteClub(ctx context.Context, club *entities.Club) error {
+	// First delete edges where the club is the target (e.g. authorizes)
+	// or source (e.g. requests_membership - though typically user requests active_membership,
+	// but club requests membership -> club is FROM).
+
+	// Let's remove any edge connected to this club node.
+	// "FOR e IN edges FILTER e._from == @id OR e._to == @id REMOVE e IN edges"
+
+	query := `
+		FOR e IN edges
+			FILTER e._from == @id OR e._to == @id
+			REMOVE e IN edges
+	`
+	bindVars := map[string]interface{}{
+		"id": "clubs/" + club.GetKey(),
+	}
+
+	_, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		// Log error but proceed to delete club? Or return error?
+		// Better to return error to ensure integrity, but if edges fail, club remains.
+		return t.Errorf("failed to remove club edges: %w", err)
+	}
+
 	return db.Clubs.Delete(club, ctx)
 }
 

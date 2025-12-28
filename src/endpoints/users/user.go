@@ -37,6 +37,10 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 
+	req.Email = strings.TrimSpace(req.Email)
+	req.FirstName = strings.TrimSpace(req.FirstName)
+	req.LastName = strings.TrimSpace(req.LastName)
+
 	userEntity := &entities.User{
 		Email:     req.Email,
 		LastName:  req.LastName,
@@ -95,6 +99,9 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
 		return
 	}
+
+	req.FirstName = strings.TrimSpace(req.FirstName)
+	req.LastName = strings.TrimSpace(req.LastName)
 
 	err := h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName)
 	if err != nil {

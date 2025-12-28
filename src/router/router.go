@@ -51,39 +51,41 @@ func NewServer(configPath string, test bool) *http.Server {
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
+			// Set CORS headers
 			header := w.Header()
-			header.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-altcha-spam-filter")
-			header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
 			header.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+			header.Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
+			header.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-altcha-spam-filter")
 		}
 
+		// Adjust status code to 204
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	r.GET("/dpv/version", Version)
-	r.POST("/dpv/users", userHandler.Register)
-	r.GET("/dpv/users/me", middleware.BasicAuthMiddleware(userHandler.Me, db))
-	r.PATCH("/dpv/users/me", middleware.BasicAuthMiddleware(userHandler.UpdateMe, db))
+	r.GET("/dpv/version", middleware.CORSMiddleware(Version))
+	r.POST("/dpv/users", middleware.CORSMiddleware(userHandler.Register))
+	r.GET("/dpv/users/me", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Me, db)))
+	r.PATCH("/dpv/users/me", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.UpdateMe, db)))
 
-	r.POST("/dpv/users/request-email-validation", middleware.BasicAuthMiddleware(userHandler.RequestEmailValidation, db))
-	r.GET("/dpv/users/validate-email", userHandler.ValidateEmail)
+	r.POST("/dpv/users/request-email-validation", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.RequestEmailValidation, db)))
+	r.GET("/dpv/users/validate-email", middleware.CORSMiddleware(userHandler.ValidateEmail))
 
-	r.POST("/dpv/users/request-password-reset", userHandler.RequestPasswordReset)
-	r.GET("/dpv/users/reset-password", userHandler.ShowResetPasswordForm)
-	r.POST("/dpv/users/reset-password", userHandler.HandleResetPassword)
-	r.PATCH("/dpv/admin/users/:key/roles", userHandler.UpdateRoles)
+	r.POST("/dpv/users/request-password-reset", middleware.CORSMiddleware(userHandler.RequestPasswordReset))
+	r.GET("/dpv/users/reset-password", middleware.CORSMiddleware(userHandler.ShowResetPasswordForm))
+	r.POST("/dpv/users/reset-password", middleware.CORSMiddleware(userHandler.HandleResetPassword))
+	r.PATCH("/dpv/admin/users/:key/roles", middleware.CORSMiddleware(userHandler.UpdateRoles))
 
-	r.POST("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.Create, db))
-	r.GET("/dpv/clubs", middleware.BasicAuthMiddleware(clubHandler.List, db))
-	r.GET("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Get, db))
-	r.PATCH("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Update, db))
-	r.DELETE("/dpv/clubs/:key", middleware.BasicAuthMiddleware(clubHandler.Delete, db))
+	r.POST("/dpv/clubs", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Create, db)))
+	r.GET("/dpv/clubs", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.List, db)))
+	r.GET("/dpv/clubs/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Get, db)))
+	r.PATCH("/dpv/clubs/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Update, db)))
+	r.DELETE("/dpv/clubs/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Delete, db)))
 
-	r.POST("/dpv/clubs/:key/apply", middleware.BasicAuthMiddleware(clubHandler.Apply, db))
-	r.POST("/dpv/clubs/:key/approve", middleware.BasicAuthMiddleware(clubHandler.Approve, db))
-	r.POST("/dpv/clubs/:key/deny", middleware.BasicAuthMiddleware(clubHandler.Deny, db))
-	r.POST("/dpv/clubs/:key/cancel", middleware.BasicAuthMiddleware(clubHandler.Cancel, db))
-	r.POST("/dpv/clubs/:key/documents", middleware.BasicAuthMiddleware(clubHandler.UploadDocument, db))
+	r.POST("/dpv/clubs/:key/apply", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Apply, db)))
+	r.POST("/dpv/clubs/:key/approve", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Approve, db)))
+	r.POST("/dpv/clubs/:key/deny", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Deny, db)))
+	r.POST("/dpv/clubs/:key/cancel", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Cancel, db)))
+	r.POST("/dpv/clubs/:key/documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.UploadDocument, db)))
 
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)
