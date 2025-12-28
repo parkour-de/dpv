@@ -33,7 +33,7 @@ func (s *Storage) SaveDocument(entityType, entityKey, originalFilename string, c
 	var finalPath string
 	var finalFilename string
 
-	for i := 0; i < 10; i++ { // Retry a few times if collision occurs
+	for i := 0; i < 30; i++ { // Retry a few times if collision occurs
 		randomSuffix := randomString(5)
 		finalFilename = fmt.Sprintf("%s-%s%s", baseWithoutExt, randomSuffix, ext)
 		finalPath = filepath.Join(entityDir, finalFilename)

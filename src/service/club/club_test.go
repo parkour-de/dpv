@@ -9,7 +9,7 @@ import (
 )
 
 func TestService_CreateClub(t *testing.T) {
-	db, _, err := graph.Init("../../../config.example.yml", true)
+	db, _, err := graph.Init("../../../config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestService_CreateClub(t *testing.T) {
 }
 
 func TestService_GetClub_Unauthorized(t *testing.T) {
-	db, _, err := graph.Init("../../../config.example.yml", true)
+	db, _, err := graph.Init("../../../config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestService_GetClub_Unauthorized(t *testing.T) {
 }
 
 func TestService_UpdateAndDelete(t *testing.T) {
-	db, _, err := graph.Init("../../../config.example.yml", true)
+	db, _, err := graph.Init("../../../config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestService_UpdateAndDelete(t *testing.T) {
 		t.Errorf("LegalForm changed unexpectedly: got %s, want %s", updated.LegalForm, "e.V.")
 	}
 
-	// Full Update (Partial Update 2 with more fields)
+	// Partial Update 2 with more fields
 	updates = map[string]interface{}{
 		"name":       "Final Name",
 		"legal_form": "GmbH",
@@ -136,7 +136,7 @@ func TestService_UpdateAndDelete(t *testing.T) {
 		t.Errorf("UpdateClub partial 2 failed: %v", err)
 	}
 
-	// Validate Full Update
+	// Validate Partial Update 2
 	updated, err = s.GetClub(ctx, key, userKey)
 	if err != nil {
 		t.Fatalf("GetClub failed after partial update 2: %v", err)

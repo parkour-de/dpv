@@ -26,6 +26,7 @@ server:
 storage:
   document_path: ./documents
 settings:
+  version: 1.0.0
   user_types:
     - user
     - athlete

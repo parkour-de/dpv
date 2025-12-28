@@ -130,7 +130,7 @@ The API will be available at `http://localhost:8080` (or your specified port).
 ### Authenticated Endpoints (require HTTP Basic Auth)
 
 - `GET /dpv/users/me` - Get current user profile
-- `PATCH /dpv/users/:key/roles` - Update user roles (Admin only)
+- `PATCH /dpv/admin/users/:key/roles` - Update user roles (Admin only)
 - `GET /dpv/clubs` - List clubs (with pagination/filtering)
 - `POST /dpv/clubs` - Create a new club
 - `GET /dpv/clubs/:key` - Get club details

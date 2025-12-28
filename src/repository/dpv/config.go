@@ -44,7 +44,7 @@ type Config struct {
 		DocumentPath string `yaml:"document_path"`
 	} `yaml:"storage"`
 	Settings struct {
-		Version   string
+		Version   string   `yaml:"version"`
 		UserTypes []string `yaml:"user_types"`
 	} `yaml:"settings"`
 	Path string
