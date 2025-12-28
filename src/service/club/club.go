@@ -27,9 +27,8 @@ func (s *Service) CreateClub(ctx context.Context, club *entities.Club, userKey s
 	}
 
 	// Default status
-	club.Status = "aktiv"
-	if club.Membership.Mitgliedsstatus == "" {
-		club.Membership.Mitgliedsstatus = "none"
+	if club.Membership.Status == "" {
+		club.Membership.Status = "inactive"
 	}
 	club.OwnerKey = userKey
 
@@ -92,7 +91,8 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 		return err
 	}
 
-	// Apply updates (simplified for now, can be more granular)
+	// Apply updates
+	// Note: Status, Beitrag, Mitglieder, and Stimmen are restricted.
 	if name, ok := updates["name"].(string); ok && name != "" {
 		club.Name = name
 	}
@@ -110,21 +110,6 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	}
 	if sepam, ok := updates["sepamandatsnummer"].(string); ok {
 		club.Membership.SEPAMandatsnummer = sepam
-	}
-	if m, ok := updates["mitglieder"].(float64); ok { // JSON numbers are float64
-		club.Mitglieder = int(m)
-	}
-	if s, ok := updates["stimmen"].(float64); ok {
-		club.Stimmen = int(s)
-	}
-	if b, ok := updates["beitrag"].(float64); ok {
-		club.Membership.Beitrag = b
-	}
-	if ms, ok := updates["mitgliedsstatus"].(string); ok && ms != "" {
-		club.Membership.Mitgliedsstatus = ms
-	}
-	if status, ok := updates["status"].(string); ok && status != "" {
-		club.Status = status
 	}
 	if addr, ok := updates["adresse"].(string); ok {
 		club.Membership.Adresse = addr

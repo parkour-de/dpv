@@ -28,9 +28,9 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 
 	if isAdmin {
 		options := graph.ClubQueryOptions{
-			Skip:            skip,
-			Limit:           limit,
-			Mitgliedsstatus: status,
+			Skip:   skip,
+			Limit:  limit,
+			Status: status,
 		}
 		clubs, err = h.Service.GetAllClubs(r.Context(), options)
 	} else {
@@ -40,7 +40,7 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 		if status != "" {
 			var filtered []entities.Club
 			for _, c := range clubs {
-				if c.Membership.Mitgliedsstatus == status {
+				if c.Membership.Status == status {
 					filtered = append(filtered, c)
 				}
 			}

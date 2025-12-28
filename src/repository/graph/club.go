@@ -12,9 +12,9 @@ import (
 )
 
 type ClubQueryOptions struct {
-	Skip            int
-	Limit           int
-	Mitgliedsstatus string
+	Skip   int
+	Limit  int
+	Status string
 }
 
 // CreateClub creates a club and an 'authorizes' edge for the creator.
@@ -116,9 +116,9 @@ func buildClubQuery(options ClubQueryOptions) (string, map[string]interface{}) {
 	var query string
 	bindVars := map[string]interface{}{}
 	query += "FOR club IN clubs\n"
-	if options.Mitgliedsstatus != "" {
-		query += "  FILTER club.membership.mitgliedsstatus == @status\n"
-		bindVars["status"] = options.Mitgliedsstatus
+	if options.Status != "" {
+		query += "  FILTER club.membership.status == @status\n"
+		bindVars["status"] = options.Status
 	}
 	query += "  SORT club.name\n"
 	if options.Skip > 0 || options.Limit > 0 {

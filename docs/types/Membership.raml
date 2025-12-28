@@ -10,10 +10,10 @@ properties:
   beitrag:
     type: number
     example: 120.50
-  mitgliedsstatus:
+  status:
     type: string
-    enum: [none, requested, approved, denied, cancelled]
-    example: "none"
+    enum: [inactive, requested, active, denied, cancelled]
+    example: "inactive"
   adresse?:
     type: string
     example: "Musterstraße 1, 12345 Musterstadt"

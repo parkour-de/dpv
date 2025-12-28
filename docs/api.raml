@@ -245,10 +245,6 @@ securitySchemes:
           rechtsform:
             type: string
             example: "e.V."
-          mitgliedsstatus:
-            type: string
-            required: false
-            example: "mitglied"
           email:
             type: string
             required: false
@@ -268,7 +264,7 @@ securitySchemes:
     queryParameters:
       status?:
         type: string
-        description: Filter by Mitgliedsstatus (none, requested, approved, denied, cancelled)
+        description: Filter by status (inactive, requested, active, denied, cancelled)
       skip?:
         type: integer
         default: 0
@@ -293,7 +289,7 @@ securitySchemes:
         403:
           description: Unauthorized
     patch:
-      description: Partially update a club
+      description: Partially update a club details (Board members only)
       body:
         application/json:
           type: object
@@ -314,18 +310,16 @@ securitySchemes:
               type: string
               required: false
               example: "Musterstraße 1, 12345 Musterstadt"
-            mitglieder:
-              type: integer
-              required: false
-              example: 100
-            stimmen:
-              type: integer
-              required: false
-              example: 5
-            mitgliedsstatus:
+            ansprechpartner:
               type: string
               required: false
-              enum: [none, requested, approved, denied, cancelled]
+              example: "Max Mustermann"
+            iban:
+              type: string
+              required: false
+            sepamandatsnummer:
+              type: string
+              required: false
       responses:
         200:
           description: Updated club details

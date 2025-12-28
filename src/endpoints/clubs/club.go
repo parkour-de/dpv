@@ -20,11 +20,10 @@ func NewHandler(service *club.Service) *ClubHandler {
 }
 
 type CreateClubRequest struct {
-	Name            string `json:"name"`
-	Rechtsform      string `json:"rechtsform"`
-	Mitgliedsstatus string `json:"mitgliedsstatus,omitempty"`
-	Email           string `json:"email,omitempty"`
-	Adresse         string `json:"adresse,omitempty"`
+	Name       string `json:"name"`
+	Rechtsform string `json:"rechtsform"`
+	Email      string `json:"email,omitempty"`
+	Adresse    string `json:"adresse,omitempty"`
 }
 
 func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -44,8 +43,7 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 		Name:       req.Name,
 		Rechtsform: req.Rechtsform,
 		Membership: entities.Membership{
-			Mitgliedsstatus: req.Mitgliedsstatus,
-			Adresse:         req.Adresse,
+			Adresse: req.Adresse,
 		},
 		Email: req.Email,
 	}
@@ -128,11 +126,10 @@ func FilteredResponse(clubEntity *entities.Club) *entities.Club {
 		},
 		Name:       clubEntity.Name,
 		Rechtsform: clubEntity.Rechtsform,
-		Status:     clubEntity.Status,
 		Membership: entities.Membership{
-			Mitgliedsstatus: clubEntity.Membership.Mitgliedsstatus,
-			Beitrag:         clubEntity.Membership.Beitrag,
-			Adresse:         clubEntity.Membership.Adresse,
+			Status:  clubEntity.Membership.Status,
+			Beitrag: clubEntity.Membership.Beitrag,
+			Adresse: clubEntity.Membership.Adresse,
 		},
 		Mitglieder:       clubEntity.Mitglieder,
 		Stimmen:          clubEntity.Stimmen,

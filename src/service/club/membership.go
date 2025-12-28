@@ -13,11 +13,11 @@ func (s *Service) Apply(ctx context.Context, key string, userKey string) error {
 	}
 
 	m := club.GetMembership()
-	if m.Mitgliedsstatus != "none" && m.Mitgliedsstatus != "cancelled" {
-		return t.Errorf("cannot apply: current status is %s", m.Mitgliedsstatus)
+	if m.Status != "inactive" && m.Status != "cancelled" {
+		return t.Errorf("cannot apply: current status is %s", m.Status)
 	}
 
-	m.Mitgliedsstatus = "requested"
+	m.Status = "requested"
 	return s.DB.UpdateClub(ctx, club)
 }
 
@@ -29,11 +29,11 @@ func (s *Service) Approve(ctx context.Context, key string) error {
 	}
 
 	m := club.GetMembership()
-	if m.Mitgliedsstatus != "requested" {
-		return t.Errorf("cannot approve: current status is %s", m.Mitgliedsstatus)
+	if m.Status != "requested" {
+		return t.Errorf("cannot approve: current status is %s", m.Status)
 	}
 
-	m.Mitgliedsstatus = "approved"
+	m.Status = "active"
 	return s.DB.UpdateClub(ctx, club)
 }
 
@@ -45,11 +45,11 @@ func (s *Service) Deny(ctx context.Context, key string) error {
 	}
 
 	m := club.GetMembership()
-	if m.Mitgliedsstatus != "requested" {
-		return t.Errorf("cannot deny: current status is %s", m.Mitgliedsstatus)
+	if m.Status != "requested" {
+		return t.Errorf("cannot deny: current status is %s", m.Status)
 	}
 
-	m.Mitgliedsstatus = "denied"
+	m.Status = "denied"
 	return s.DB.UpdateClub(ctx, club)
 }
 
@@ -61,10 +61,10 @@ func (s *Service) Cancel(ctx context.Context, key string, userKey string) error 
 	}
 
 	m := club.GetMembership()
-	if m.Mitgliedsstatus == "approved" {
-		m.Mitgliedsstatus = "cancelled"
+	if m.Status == "active" {
+		m.Status = "cancelled"
 	} else {
-		m.Mitgliedsstatus = "none"
+		m.Status = "inactive"
 	}
 
 	return s.DB.UpdateClub(ctx, club)

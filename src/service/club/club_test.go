@@ -150,11 +150,12 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	if updated.Email != "test@example.com" {
 		t.Errorf("Email not updated: got %s", updated.Email)
 	}
-	if updated.Mitglieder != 50 {
-		t.Errorf("Mitglieder not updated: got %d", updated.Mitglieder)
+	// Note: Mitglieder and Stimmen should NOT be updated via UpdateClub
+	if updated.Mitglieder != 0 {
+		t.Errorf("Mitglieder SHOULD NOT be updated via PATCH: got %d, want 0", updated.Mitglieder)
 	}
-	if updated.Stimmen != 3 {
-		t.Errorf("Stimmen not updated: got %d", updated.Stimmen)
+	if updated.Stimmen != 0 {
+		t.Errorf("Stimmen SHOULD NOT be updated via PATCH: got %d, want 0", updated.Stimmen)
 	}
 
 	// Delete
