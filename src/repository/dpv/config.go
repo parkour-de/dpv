@@ -46,6 +46,7 @@ type Config struct {
 	Settings struct {
 		Version   string   `yaml:"version"`
 		UserTypes []string `yaml:"user_types"`
+		BaseURL   string   `yaml:"base_url"`
 	} `yaml:"settings"`
 	Path string
 }

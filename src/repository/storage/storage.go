@@ -74,3 +74,41 @@ func randomString(n int) string {
 	}
 	return string(b)
 }
+
+// ListDocuments lists all filenames for a given entity.
+func (s *Storage) ListDocuments(entityType, entityKey string) ([]string, error) {
+	entityDir := filepath.Join(s.Root, entityType, entityKey)
+	entries, err := os.ReadDir(entityDir)
+	if os.IsNotExist(err) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("could not read directory: %w", err)
+	}
+
+	var files []string
+	for _, entry := range entries {
+		if !entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+			files = append(files, entry.Name())
+		}
+	}
+	return files, nil
+}
+
+// GetDocumentPath returns the absolute path to a document, ensuring it is within the allowed directory.
+func (s *Storage) GetDocumentPath(entityType, entityKey, filename string) (string, error) {
+	// Sanitize filename to prevent path traversal
+	cleanFilename := filepath.Base(filepath.Clean(filename))
+	if cleanFilename == "." || cleanFilename == "/" {
+		return "", fmt.Errorf("invalid filename")
+	}
+
+	path := filepath.Join(s.Root, entityType, entityKey, cleanFilename)
+
+	// Check if file exists
+	if _, err := os.Stat(path); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}

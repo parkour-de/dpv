@@ -108,7 +108,7 @@ func (s *Service) RequestEmailValidation(ctx context.Context, newEmail string) e
 	}
 
 	// Build validation URL
-	baseURL := "http://localhost:8080" // TODO: Make this configurable
+	baseURL := dpv.ConfigInstance.Settings.BaseURL
 	validationURL := fmt.Sprintf("%s/dpv/users/validate-email?key=%s&expiry=%d&email=%s&token=%s",
 		baseURL, user.Key, expiry, parameter, token)
 
@@ -143,7 +143,7 @@ func (s *Service) RequestPasswordReset(ctx context.Context, emailAddr string) er
 		return t.Errorf("could not generate password reset token: %w", err)
 	}
 
-	baseURL := "http://localhost:8080" // TODO: Make this configurable
+	baseURL := dpv.ConfigInstance.Settings.BaseURL
 	resetURL := fmt.Sprintf("%s/dpv/users/reset-password?key=%s&expiry=%d&token=%s",
 		baseURL, user.Key, expiry, token)
 
