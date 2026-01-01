@@ -67,7 +67,7 @@ func TestService_GetClub_Unauthorized(t *testing.T) {
 	}
 
 	ownerKey := "owner"
-	otherUser := "other"
+	otherUser := &entities.User{Entity: entities.Entity{Key: "other"}}
 
 	err = s.CreateClub(context.Background(), club, ownerKey)
 	if err != nil {
@@ -95,6 +95,7 @@ func TestService_UpdateAndDelete(t *testing.T) {
 		LegalForm: "e.V.",
 	}
 	userKey := "owner"
+	user := &entities.User{Entity: entities.Entity{Key: userKey}}
 
 	err = s.CreateClub(ctx, club, userKey)
 	if err != nil {
@@ -106,13 +107,13 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	updates := map[string]interface{}{
 		"name": "Updated Name",
 	}
-	err = s.UpdateClub(ctx, key, updates, userKey)
+	err = s.UpdateClub(ctx, key, updates, user)
 	if err != nil {
 		t.Errorf("UpdateClub partial 1 failed: %v", err)
 	}
 
 	// Validate Partial Update 1
-	updated, err := s.GetClub(ctx, key, userKey)
+	updated, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		t.Fatalf("GetClub failed after partial update 1: %v", err)
 	}
@@ -131,13 +132,13 @@ func TestService_UpdateAndDelete(t *testing.T) {
 		"members":    float64(50),
 		"votes":      float64(3),
 	}
-	err = s.UpdateClub(ctx, key, updates, userKey)
+	err = s.UpdateClub(ctx, key, updates, user)
 	if err != nil {
 		t.Errorf("UpdateClub partial 2 failed: %v", err)
 	}
 
 	// Validate Partial Update 2
-	updated, err = s.GetClub(ctx, key, userKey)
+	updated, err = s.GetClub(ctx, key, user)
 	if err != nil {
 		t.Fatalf("GetClub failed after partial update 2: %v", err)
 	}
@@ -159,13 +160,13 @@ func TestService_UpdateAndDelete(t *testing.T) {
 	}
 
 	// Delete
-	err = s.DeleteClub(ctx, key, userKey)
+	err = s.DeleteClub(ctx, key, user)
 	if err != nil {
 		t.Errorf("DeleteClub failed: %v", err)
 	}
 
 	// Validate Delete
-	_, err = s.GetClub(ctx, key, userKey)
+	_, err = s.GetClub(ctx, key, user)
 	if err == nil {
 		t.Errorf("GetClub should have failed after deletion")
 	}

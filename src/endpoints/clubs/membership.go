@@ -2,7 +2,6 @@ package clubs
 
 import (
 	"dpv/dpv/src/api"
-	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
 	"net/http"
 
@@ -11,14 +10,14 @@ import (
 
 // Apply handles membership application.
 func (h *ClubHandler) Apply(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
-	err := h.Service.Apply(r.Context(), key, user.Key)
+	err = h.Service.Apply(r.Context(), key, user)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -65,14 +64,14 @@ func (h *ClubHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter
 
 // Cancel handles membership cancellation.
 func (h *ClubHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
-	err := h.Service.Cancel(r.Context(), key, user.Key)
+	err = h.Service.Cancel(r.Context(), key, user)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return

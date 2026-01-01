@@ -2,12 +2,13 @@ package club
 
 import (
 	"context"
+	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
 )
 
 // Apply marks a club's membership as requested.
-func (s *Service) Apply(ctx context.Context, key string, userKey string) error {
-	club, err := s.GetClub(ctx, key, userKey)
+func (s *Service) Apply(ctx context.Context, key string, user *entities.User) error {
+	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return err
 	}
@@ -54,8 +55,8 @@ func (s *Service) Deny(ctx context.Context, key string) error {
 }
 
 // Cancel marks a club's membership as cancelled or none.
-func (s *Service) Cancel(ctx context.Context, key string, userKey string) error {
-	club, err := s.GetClub(ctx, key, userKey)
+func (s *Service) Cancel(ctx context.Context, key string, user *entities.User) error {
+	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return err
 	}

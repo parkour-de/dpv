@@ -16,6 +16,14 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+func GetUserFromContext(r *http.Request) (*entities.User, error) {
+	user, ok := r.Context().Value("user").(*entities.User)
+	if !ok || user == nil {
+		return nil, t.Errorf("user not found in context")
+	}
+	return user, nil
+}
+
 func Authenticated(r *http.Request, db *graph.Db) (*entities.User, error) {
 	email, password, ok := r.BasicAuth()
 	if !ok {

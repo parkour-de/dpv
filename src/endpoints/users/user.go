@@ -74,9 +74,9 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 
 // Me returns the current user
 func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	userEntity, ok := r.Context().Value("user").(*entities.User)
-	if !ok || userEntity == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	userEntity, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 	resp := filteredResponse(userEntity)
@@ -85,9 +85,9 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 
 // UpdateMe allows the user to update their vorname and/or name
 func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	userEntity, ok := r.Context().Value("user").(*entities.User)
-	if !ok || userEntity == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	userEntity, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
 
-	err := h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName)
+	err = h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -116,9 +116,9 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 
 // RequestEmailValidation - requires authentication
 func (h *UserHandler) RequestEmailValidation(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	userEntity, ok := r.Context().Value("user").(*entities.User)
-	if !ok || userEntity == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	userEntity, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -131,7 +131,7 @@ func (h *UserHandler) RequestEmailValidation(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err := h.Service.RequestEmailValidation(r.Context(), req.Email)
+	err = h.Service.RequestEmailValidation(r.Context(), req.Email)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return

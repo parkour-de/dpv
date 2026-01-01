@@ -28,9 +28,9 @@ type CreateClubRequest struct {
 }
 
 func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 		Email: req.Email,
 	}
 
-	err := h.Service.CreateClub(r.Context(), clubEntity, user.Key)
+	err = h.Service.CreateClub(r.Context(), clubEntity, user.Key)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -64,14 +64,14 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 }
 
 func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
-	club, err := h.Service.GetClub(r.Context(), key, user.Key)
+	club, err := h.Service.GetClub(r.Context(), key, user)
 	if err != nil {
 		api.Error(w, r, err, http.StatusForbidden)
 		return
@@ -81,9 +81,9 @@ func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 }
 
 func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -100,25 +100,25 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 		}
 	}
 
-	err := h.Service.UpdateClub(r.Context(), key, updates, user.Key)
+	err = h.Service.UpdateClub(r.Context(), key, updates, user)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	club, _ := h.Service.GetClub(r.Context(), key, user.Key)
+	club, _ := h.Service.GetClub(r.Context(), key, user)
 	api.SuccessJson(w, r, FilteredResponse(club))
 }
 
 func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
-	err := h.Service.DeleteClub(r.Context(), key, user.Key)
+	err = h.Service.DeleteClub(r.Context(), key, user)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return

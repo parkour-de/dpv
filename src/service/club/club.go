@@ -2,6 +2,7 @@ package club
 
 import (
 	"context"
+	"dpv/dpv/src/api"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/storage"
@@ -35,27 +36,31 @@ func (s *Service) CreateClub(ctx context.Context, club *entities.Club, userKey s
 	return s.DB.CreateClub(ctx, club, userKey)
 }
 
-// GetClub retrieves a club by key and ensures the user has access.
-func (s *Service) GetClub(ctx context.Context, key string, userKey string) (*entities.Club, error) {
-	// For Phase 3.1, we allow any board member to view the club.
-	// In the future, we might allow any DPV admin or public view depending on visibility.
+// IsAuthorized checks if a user is an admin or a board member of the club.
+func (s *Service) IsAuthorized(ctx context.Context, user *entities.User, clubKey string) (bool, error) {
+	if api.IsAdmin(*user) {
+		return true, nil
+	}
+	administered, err := s.DB.GetAdministeredClubs(ctx, user.Key)
+	if err != nil {
+		return false, err
+	}
+	for _, c := range administered {
+		if c.GetKey() == clubKey {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
-	// Check if user is board member
-	administered, err := s.DB.GetAdministeredClubs(ctx, userKey)
+// GetClub retrieves a club by key and ensures the user has access.
+func (s *Service) GetClub(ctx context.Context, key string, user *entities.User) (*entities.Club, error) {
+	authorized, err := s.IsAuthorized(ctx, user, key)
 	if err != nil {
 		return nil, err
 	}
-
-	authorized := false
-	for _, c := range administered {
-		if c.GetKey() == key {
-			authorized = true
-			break
-		}
-	}
-
 	if !authorized {
-		return nil, t.Errorf("unauthorized: you are not a board member of this club")
+		return nil, t.Errorf("unauthorized: you are not a board member or admin")
 	}
 
 	return s.DB.GetClubByKey(ctx, key)
@@ -67,21 +72,11 @@ func (s *Service) ListClubs(ctx context.Context, userKey string) ([]entities.Clu
 }
 
 // UpdateClub partially updates a club.
-func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string]interface{}, userKey string) error {
-	// Check authorization
-	administered, err := s.DB.GetAdministeredClubs(ctx, userKey)
+func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string]interface{}, user *entities.User) error {
+	authorized, err := s.IsAuthorized(ctx, user, key)
 	if err != nil {
 		return err
 	}
-
-	authorized := false
-	for _, c := range administered {
-		if c.GetKey() == key {
-			authorized = true
-			break
-		}
-	}
-
 	if !authorized {
 		return t.Errorf("unauthorized: you cannot update this club")
 	}
@@ -119,23 +114,11 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 }
 
 // DeleteClub deletes a club if the user is authorized.
-func (s *Service) DeleteClub(ctx context.Context, key string, userKey string) error {
-	// In Phase 3.1, only the owner can delete for now, or any board member.
-	// Let's stick to board member for now.
-
-	administered, err := s.DB.GetAdministeredClubs(ctx, userKey)
+func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.User) error {
+	authorized, err := s.IsAuthorized(ctx, user, key)
 	if err != nil {
 		return err
 	}
-
-	authorized := false
-	for _, c := range administered {
-		if c.GetKey() == key {
-			authorized = true
-			break
-		}
-	}
-
 	if !authorized {
 		return t.Errorf("unauthorized: you cannot delete this club")
 	}

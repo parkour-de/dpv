@@ -6,9 +6,17 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"unicode"
 )
+
+// Document represents a stored file with metadata.
+type Document struct {
+	Name         string `json:"name"`
+	Size         int64  `json:"size"`          // in KiB, rounded up
+	LastModified int64  `json:"last_modified"` // unix seconds
+}
 
 // Storage provides methods to manage document storage.
 type Storage struct {
@@ -75,24 +83,43 @@ func randomString(n int) string {
 	return string(b)
 }
 
-// ListDocuments lists all filenames for a given entity.
-func (s *Storage) ListDocuments(entityType, entityKey string) ([]string, error) {
+// ListDocuments lists all documents with metadata for a given entity.
+func (s *Storage) ListDocuments(entityType, entityKey string) ([]Document, error) {
 	entityDir := filepath.Join(s.Root, entityType, entityKey)
 	entries, err := os.ReadDir(entityDir)
 	if os.IsNotExist(err) {
-		return []string{}, nil
+		return []Document{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("could not read directory: %w", err)
 	}
 
-	var files []string
+	var documents []Document
 	for _, entry := range entries {
 		if !entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
-			files = append(files, entry.Name())
+			info, err := entry.Info()
+			if err != nil {
+				continue // skip files where we can't get info
+			}
+
+			// Calculate size in KiB rounded up
+			sizeBytes := info.Size()
+			sizeKiB := (sizeBytes + 1023) / 1024
+
+			documents = append(documents, Document{
+				Name:         entry.Name(),
+				Size:         sizeKiB,
+				LastModified: info.ModTime().Unix(),
+			})
 		}
 	}
-	return files, nil
+
+	// Sort by modification date descending (newest first)
+	sort.Slice(documents, func(i, j int) bool {
+		return documents[i].LastModified > documents[j].LastModified
+	})
+
+	return documents, nil
 }
 
 // GetDocumentPath returns the absolute path to a document, ensuring it is within the allowed directory.

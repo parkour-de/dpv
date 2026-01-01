@@ -40,7 +40,7 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 
 	// Apply
-	err = s.Apply(ctx, key, userKey)
+	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}})
 	if err != nil {
 		t.Fatalf("Apply failed: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 
 	// Cancel
-	err = s.Cancel(ctx, key, userKey)
+	err = s.Cancel(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}})
 	if err != nil {
 		t.Fatalf("Cancel failed: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 
 	// Apply again from cancelled
-	err = s.Apply(ctx, key, userKey)
+	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}})
 	if err != nil {
 		t.Fatalf("Apply after Cancel failed: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestMembership_InvalidTransitions(t *testing.T) {
 	s.DB.UpdateClub(ctx, club)
 
 	// Cannot apply if already active
-	err = s.Apply(ctx, key, userKey)
+	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}})
 	if err == nil || !strings.Contains(err.Error(), "Antrag kann nicht gestellt werden") {
 		t.Errorf("Expected 'cannot apply' error, got %v", err)
 	}

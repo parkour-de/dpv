@@ -1,9 +1,7 @@
 package clubs
 
 import (
-	"context"
 	"dpv/dpv/src/api"
-	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
 	"net/http"
 
@@ -12,21 +10,24 @@ import (
 
 // UploadDocument handles file uploads for a club.
 func (h *ClubHandler) UploadDocument(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
-	// Check auth: user must be board member or admin
-	if !h.isAuthorized(r.Context(), user, key) {
-		api.Error(w, r, t.Errorf("unauthorized to upload documents for this club"), http.StatusForbidden)
+	if authorized, err := h.Service.IsAuthorized(r.Context(), user, key); err != nil || !authorized {
+		if err != nil {
+			api.Error(w, r, err, http.StatusInternalServerError)
+		} else {
+			api.Error(w, r, t.Errorf("unauthorized to upload documents for this club"), http.StatusForbidden)
+		}
 		return
 	}
 
 	// Parse multipart form
-	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB limit
+	if err := r.ParseMultipartForm(50 << 20); err != nil { // 50MB limit
 		api.Error(w, r, t.Errorf("parse multipart form failed: %w", err), http.StatusBadRequest)
 		return
 	}
@@ -53,15 +54,19 @@ func (h *ClubHandler) UploadDocument(w http.ResponseWriter, r *http.Request, ps 
 
 // ListDocuments lists documents for a club.
 func (h *ClubHandler) ListDocuments(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
-	if !h.isAuthorized(r.Context(), user, key) {
-		api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
+	if authorized, err := h.Service.IsAuthorized(r.Context(), user, key); err != nil || !authorized {
+		if err != nil {
+			api.Error(w, r, err, http.StatusInternalServerError)
+		} else {
+			api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
+		}
 		return
 	}
 
@@ -76,17 +81,21 @@ func (h *ClubHandler) ListDocuments(w http.ResponseWriter, r *http.Request, ps h
 
 // GetDocument serves a document for a club.
 func (h *ClubHandler) GetDocument(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, ok := r.Context().Value("user").(*entities.User)
-	if !ok || user == nil {
-		api.Error(w, r, t.Errorf("user not found in context"), http.StatusUnauthorized)
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
 	filename := ps.ByName("filename")
 
-	if !h.isAuthorized(r.Context(), user, key) {
-		api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
+	if authorized, err := h.Service.IsAuthorized(r.Context(), user, key); err != nil || !authorized {
+		if err != nil {
+			api.Error(w, r, err, http.StatusInternalServerError)
+		} else {
+			api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
+		}
 		return
 	}
 
@@ -97,21 +106,4 @@ func (h *ClubHandler) GetDocument(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	http.ServeFile(w, r, path)
-}
-
-// Helper to check authorization
-func (h *ClubHandler) isAuthorized(ctx context.Context, user *entities.User, clubKey string) bool {
-	if api.IsAdmin(*user) {
-		return true
-	}
-	administered, err := h.Service.ListClubs(ctx, user.Key)
-	if err != nil {
-		return false
-	}
-	for _, c := range administered {
-		if c.GetKey() == clubKey {
-			return true
-		}
-	}
-	return false
 }
