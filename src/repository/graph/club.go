@@ -73,9 +73,37 @@ func (db *Db) GetAdministeredClubs(ctx context.Context, userKey string) ([]entit
 	return result, nil
 }
 
-// GetClubByKey retrieves a club by its key.
+// GetClubByKey retrieves a club by its key including Vorstand information.
 func (db *Db) GetClubByKey(ctx context.Context, key string) (*entities.Club, error) {
-	return db.Clubs.Read(key, ctx)
+	query := `
+		LET club = DOCUMENT("clubs", @key)
+		LET vorstand = (
+			FOR v, e IN 1..1 INBOUND CONCAT("clubs/", @key) edges
+				FILTER e.type == "authorizes" AND e.role == "vorstand"
+				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname}
+		)
+		RETURN MERGE(club, {vorstand: vorstand})
+	`
+	bindVars := map[string]interface{}{
+		"key": key,
+	}
+
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return nil, t.Errorf("query for club failed: %w", err)
+	}
+	defer cursor.Close()
+
+	var result entities.Club
+	_, err = cursor.ReadDocument(ctx, &result)
+	if shared.IsNoMoreDocuments(err) {
+		return nil, t.Errorf("club not found")
+	} else if err != nil {
+		return nil, t.Errorf("obtaining club document failed: %w", err)
+	}
+
+	result.SetKey(key)
+	return &result, nil
 }
 
 // UpdateClub updates an existing club.

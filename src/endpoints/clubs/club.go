@@ -155,6 +155,7 @@ func FilteredResponse(clubEntity *entities.Club) *entities.Club {
 		StatutesVerification: clubEntity.StatutesVerification,
 		RegistryOK:           clubEntity.RegistryOK,
 		RegistryVerification: clubEntity.RegistryVerification,
+		Vorstand:             clubEntity.Vorstand, // Include Vorstand info from query
 	}
 	// Note: IBAN and SEPAMandatsnummer are omitted here for security/privacy in general views
 	return resp
