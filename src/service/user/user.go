@@ -67,7 +67,11 @@ func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName, newLa
 		user.LastName = newLastName
 		updated = true
 	}
-	if newLanguage != "" {
+	// Handle language: "default" is a tombstone to clear the preference
+	if newLanguage == "default" {
+		user.Language = ""
+		updated = true
+	} else if newLanguage != "" {
 		user.Language = newLanguage
 		updated = true
 	}
