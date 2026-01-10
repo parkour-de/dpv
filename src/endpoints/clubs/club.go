@@ -160,3 +160,54 @@ func FilteredResponse(clubEntity *entities.Club) *entities.Club {
 	// Note: IBAN and SEPAMandatsnummer are omitted here for security/privacy in general views
 	return resp
 }
+
+func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	key := ps.ByName("key")
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
+		return
+	}
+	req.Email = strings.TrimSpace(req.Email)
+	if req.Email == "" {
+		api.Error(w, r, t.Errorf("email must not be empty"), http.StatusBadRequest)
+		return
+	}
+
+	err = h.Service.AddOwner(r.Context(), key, req.Email, user)
+	if err != nil {
+		api.Error(w, r, err, http.StatusBadRequest)
+		return
+	}
+	// Return updated club
+	club, _ := h.Service.GetClub(r.Context(), key, user)
+	api.SuccessJson(w, r, FilteredResponse(club))
+}
+
+func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	key := ps.ByName("key")
+	targetUserKey := ps.ByName("userKey")
+
+	err = h.Service.RemoveOwner(r.Context(), key, targetUserKey, user)
+	if err != nil {
+		api.Error(w, r, err, http.StatusBadRequest)
+		return
+	}
+	// Return updated club
+	club, _ := h.Service.GetClub(r.Context(), key, user)
+	api.SuccessJson(w, r, FilteredResponse(club))
+}

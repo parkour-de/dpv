@@ -86,7 +86,11 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.POST("/dpv/clubs/:key/documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.UploadDocument, db)))
 	r.GET("/dpv/clubs/:key/documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.ListDocuments, db)))
 	r.GET("/dpv/clubs/:key/documents/:filename", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.GetDocument, db)))
+	r.GET("/dpv/clubs/:key/download-documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.DownloadAllDocuments, db)))
 	r.GET("/dpv/clubs/:key/payment-details", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.GetPaymentDetails, db)))
+
+	r.POST("/dpv/clubs/:key/owners", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.AddOwner, db)))
+	r.DELETE("/dpv/clubs/:key/owners/:userKey", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.RemoveOwner, db)))
 
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)

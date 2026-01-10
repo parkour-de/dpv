@@ -176,3 +176,16 @@ func ParseFloat(queryValue string) (float64, error) {
 	}
 	return strconv.ParseFloat(queryValue, 64)
 }
+
+func SanitizeFilename(name string) string {
+	// Simple cleanup: strictly alphanumeric, hyphen, underscore
+	// Everything else becomes an underscore
+	safe := strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
+			return r
+		}
+		return '_'
+	}, name)
+	// clean up multiple underscores or leading/trailing
+	return strings.Trim(safe, "_")
+}

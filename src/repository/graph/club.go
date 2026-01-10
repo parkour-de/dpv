@@ -174,3 +174,68 @@ func buildClubQuery(options ClubQueryOptions) (string, map[string]interface{}) {
 	query += "  RETURN club"
 	return query, bindVars
 }
+
+// AddVorstand adds a user as a board member (owner) of the club.
+func (db *Db) AddVorstand(ctx context.Context, clubKey, userKey string) error {
+	// Check if edge already exists to avoid duplicates? ArangoDB might handle or we can check.
+	// But let's just try to create. If distinct edges are enforced, it might fail.
+	// Simpler is to use AQL UPSERT or check existence.
+	query := `
+		UPSERT { _from: @userKey, _to: @clubKey, type: "authorizes", role: "vorstand" }
+		INSERT { _from: @userKey, _to: @clubKey, type: "authorizes", role: "vorstand" }
+		UPDATE {} IN edges
+	`
+	bindVars := map[string]interface{}{
+		"userKey": "users/" + userKey,
+		"clubKey": "clubs/" + clubKey,
+	}
+	_, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return t.Errorf("failed to add vorstand: %w", err)
+	}
+	return nil
+}
+
+// RemoveVorstand removes a user from board members.
+func (db *Db) RemoveVorstand(ctx context.Context, clubKey, userKey string) error {
+	query := `
+		FOR e IN edges
+			FILTER e._from == @userKey AND e._to == @clubKey AND e.type == "authorizes" AND e.role == "vorstand"
+			REMOVE e IN edges
+	`
+	bindVars := map[string]interface{}{
+		"userKey": "users/" + userKey,
+		"clubKey": "clubs/" + clubKey,
+	}
+	_, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return t.Errorf("failed to remove vorstand: %w", err)
+	}
+	return nil
+}
+
+// CountVorstand returns the number of board members for a club.
+func (db *Db) CountVorstand(ctx context.Context, clubKey string) (int, error) {
+	query := `
+		RETURN LENGTH(
+			FOR v, e IN 1..1 INBOUND CONCAT("clubs/", @key) edges
+				FILTER e.type == "authorizes" AND e.role == "vorstand"
+				RETURN v
+		)
+	`
+	bindVars := map[string]interface{}{
+		"key": clubKey,
+	}
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return 0, t.Errorf("failed to count vorstand: %w", err)
+	}
+	defer cursor.Close()
+
+	var count int
+	_, err = cursor.ReadDocument(ctx, &count)
+	if err != nil {
+		return 0, t.Errorf("failed to read count: %w", err)
+	}
+	return count, nil
+}

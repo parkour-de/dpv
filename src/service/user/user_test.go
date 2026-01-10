@@ -80,23 +80,31 @@ func TestUpdateMe(t *testing.T) {
 	userCtx := context.WithValue(ctx, "user", user)
 
 	// Success
-	err := service.UpdateMe(userCtx, "New", "Name")
+	err := service.UpdateMe(userCtx, "NewFirst", "", "")
 	if err != nil {
-		t.Fatalf("UpdateMe failed: %v", err)
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if user.FirstName != "NewFirst" {
+		t.Errorf("expected firstname to be Updated")
 	}
 
-	if user.FirstName != "New" {
-		t.Errorf("Expected FirstName 'New', got '%s'", user.FirstName)
+	// Test Update LastName
+	err = service.UpdateMe(userCtx, "", "NewLast", "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if user.LastName != "NewLast" {
+		t.Errorf("expected lastname to be Updated")
 	}
 
-	// No fields to update
-	err = service.UpdateMe(userCtx, "", "")
+	// Test No Update
+	err = service.UpdateMe(userCtx, "", "", "")
 	if err == nil || err.Error() != "no fields to update" {
 		t.Errorf("Expected 'no fields to update' error, got '%v'", err)
 	}
 
 	// User not in context
-	err = service.UpdateMe(ctx, "New", "Name")
+	err = service.UpdateMe(ctx, "New", "Name", "")
 	if err == nil || err.Error() != "user not found in context" {
 		t.Errorf("Expected 'user not found in context' error, got '%v'", err)
 	}

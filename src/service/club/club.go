@@ -130,3 +130,54 @@ func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.Use
 
 	return s.DB.DeleteClub(ctx, club)
 }
+
+// AddOwner adds a user as a club owner by email.
+func (s *Service) AddOwner(ctx context.Context, clubKey, email string, actor *entities.User) error {
+	authorized, err := s.IsAuthorized(ctx, actor, clubKey)
+	if err != nil {
+		return err
+	}
+	if !authorized {
+		return t.Errorf("unauthorized: you cannot manage owners for this club")
+	}
+
+	users, err := s.DB.GetUsersByEmail(ctx, email)
+	if err != nil {
+		return t.Errorf("failed to search user: %w", err)
+	}
+	if len(users) == 0 {
+		return t.Errorf("user with email %s not found", email)
+	}
+	targetUser := users[0]
+
+	return s.DB.AddVorstand(ctx, clubKey, targetUser.Key)
+}
+
+// RemoveOwner removes a user from club owners.
+func (s *Service) RemoveOwner(ctx context.Context, clubKey, targetUserKey string, actor *entities.User) error {
+	authorized, err := s.IsAuthorized(ctx, actor, clubKey)
+	if err != nil {
+		return err
+	}
+	if !authorized {
+		return t.Errorf("unauthorized: you cannot manage owners for this club")
+	}
+
+	// Rule: Cannot remove yourself unless you are admin
+	if actor.Key == targetUserKey && !api.IsAdmin(*actor) {
+		return t.Errorf("you cannot remove yourself from owners")
+	}
+
+	// Rule: Cannot remove the last remaining owner
+	count, err := s.DB.CountVorstand(ctx, clubKey)
+	if err != nil {
+		return err
+	}
+	if count <= 1 {
+		// Verify if the target IS the one (should be if count is 1 and they exist)
+		// But efficiently, if count is 1, any removal is forbidden.
+		return t.Errorf("cannot remove the last remaining owner")
+	}
+
+	return s.DB.RemoveVorstand(ctx, clubKey, targetUserKey)
+}

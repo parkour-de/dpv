@@ -97,6 +97,7 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 	var req struct {
 		FirstName string `json:"firstname,omitempty"`
 		LastName  string `json:"lastname,omitempty"`
+		Language  string `json:"language,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
@@ -105,8 +106,9 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
+	req.Language = strings.TrimSpace(req.Language)
 
-	err = h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName)
+	err = h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName, req.Language)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -367,6 +369,7 @@ func filteredResponse(userEntity *entities.User) *entities.User {
 		FirstName:  userEntity.FirstName,
 		Roles:      userEntity.Roles,
 		Membership: userEntity.Membership,
+		Language:   userEntity.Language,
 	}
 	return resp
 }

@@ -53,7 +53,7 @@ func (s *Service) CreateUser(ctx context.Context, user *entities.User, password 
 	return s.DB.Users.Create(user, ctx)
 }
 
-func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName string) error {
+func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName, newLanguage string) error {
 	user, ok := ctx.Value("user").(*entities.User)
 	if !ok || user == nil {
 		return t.Errorf("user not found in context")
@@ -65,6 +65,10 @@ func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName string
 	}
 	if newLastName != "" {
 		user.LastName = newLastName
+		updated = true
+	}
+	if newLanguage != "" {
+		user.Language = newLanguage
 		updated = true
 	}
 	if !updated {

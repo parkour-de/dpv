@@ -1,9 +1,13 @@
 package clubs
 
 import (
+	"archive/zip"
 	"dpv/dpv/src/api"
 	"dpv/dpv/src/repository/t"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -106,4 +110,71 @@ func (h *ClubHandler) GetDocument(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	http.ServeFile(w, r, path)
+}
+
+// DownloadAllDocuments streams a zip of all documents
+func (h *ClubHandler) DownloadAllDocuments(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	key := ps.ByName("key")
+	if authorized, err := h.Service.IsAuthorized(r.Context(), user, key); err != nil || !authorized {
+		if err != nil {
+			api.Error(w, r, err, http.StatusInternalServerError)
+		} else {
+			api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
+		}
+		return
+	}
+
+	// List files
+	filesEntry, err := h.Service.Storage.ListDocuments("clubs", key)
+	if err != nil {
+		api.Error(w, r, t.Errorf("list documents failed: %w", err), http.StatusInternalServerError)
+		return
+	}
+
+	if len(filesEntry) == 0 {
+		api.Error(w, r, t.Errorf("no documents found"), http.StatusNotFound)
+		return
+	}
+
+	club, _ := h.Service.GetClub(r.Context(), key, user)
+	sanitizedClubName := "documents"
+	if club != nil {
+		sanitizedClubName = api.SanitizeFilename(club.Name)
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s-documents.zip\"", sanitizedClubName))
+
+	zipWriter := zip.NewWriter(w)
+	defer zipWriter.Close()
+
+	for _, doc := range filesEntry {
+		path, err := h.Service.Storage.GetDocumentPath("clubs", key, doc.Name)
+		if err != nil {
+			continue // skip
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			continue
+		}
+
+		// Create zip entry
+		w, err := zipWriter.Create(doc.Name)
+		if err != nil {
+			f.Close()
+			continue
+		}
+		if _, err := io.Copy(w, f); err != nil {
+			f.Close()
+			continue
+		}
+		f.Close()
+	}
 }
