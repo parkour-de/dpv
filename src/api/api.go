@@ -106,7 +106,8 @@ func DetectLanguage(r *http.Request) string {
 		acceptLang := r.Header.Get("Accept-Language")
 		tags, _, _ := language.ParseAcceptLanguage(acceptLang)
 		if len(tags) > 0 {
-			targetLang = tags[0].String()
+			base, _ := tags[0].Base()
+			targetLang = base.String()
 		}
 	}
 	return targetLang
