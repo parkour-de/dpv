@@ -1,4 +1,4 @@
-LANGUAGES="de fr es tr ru ar pl ro ua sq"
+LANGUAGES="de fr es tr ru ar pl ro uk sq"
 
 # Extract keys from source code
 # We focus on t.Errorf because t.T now takes an error (usually from t.Errorf)

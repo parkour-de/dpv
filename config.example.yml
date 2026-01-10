@@ -39,3 +39,15 @@ settings:
     - company
     - school
     - government
+  supported_languages:
+    - de
+    - en
+    - fr
+    - es
+    - tr
+    - ru
+    - ar
+    - pl
+    - ro
+    - uk
+    - sq
