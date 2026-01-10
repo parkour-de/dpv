@@ -4,8 +4,6 @@ import (
 	"crypto/rand"
 	"dpv/dpv/src/repository/t"
 	"encoding/base64"
-	"errors"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -33,10 +31,8 @@ func MakeNonce() (string, error) {
 }
 
 func IsStrongPassword(password string) (bool, error) {
-	var reasons []string
-
 	if len(password) < 10 {
-		reasons = append(reasons, t.T("too short (min 10 characters)"))
+		return false, t.Errorf("too short (min 10 characters)")
 	}
 
 	allDigits := true
@@ -58,20 +54,17 @@ func IsStrongPassword(password string) (bool, error) {
 	}
 
 	if allDigits {
-		reasons = append(reasons, t.T("must not be only digits"))
+		return false, t.Errorf("must not be only digits")
 	}
 	if allLower {
-		reasons = append(reasons, t.T("must not be only lowercase letters"))
+		return false, t.Errorf("must not be only lowercase letters")
 	}
 	if allUpper {
-		reasons = append(reasons, t.T("must not be only uppercase letters"))
+		return false, t.Errorf("must not be only uppercase letters")
 	}
 	if len(glyphs) < 8 {
-		reasons = append(reasons, t.T("must have at least 8 different glyphs"))
+		return false, t.Errorf("must have at least 8 different glyphs")
 	}
 
-	if len(reasons) > 0 {
-		return false, errors.New(strings.Join(reasons, ", "))
-	}
 	return true, nil
 }

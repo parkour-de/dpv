@@ -44,9 +44,10 @@ type Config struct {
 		DocumentPath string `yaml:"document_path"`
 	} `yaml:"storage"`
 	Settings struct {
-		Version   string   `yaml:"version"`
-		UserTypes []string `yaml:"user_types"`
-		BaseURL   string   `yaml:"base_url"`
+		Version            string   `yaml:"version"`
+		UserTypes          []string `yaml:"user_types"`
+		BaseURL            string   `yaml:"base_url"`
+		SupportedLanguages []string `yaml:"supported_languages"`
 	} `yaml:"settings"`
 	Path string
 }

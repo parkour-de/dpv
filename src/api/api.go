@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/language"
 )
 
 type ErrorResponse struct {
@@ -90,19 +92,50 @@ func Success(w http.ResponseWriter, r *http.Request, jsonMsg []byte) {
 	)
 }
 
+func DetectLanguage(r *http.Request) string {
+	targetLang := "en" // Default
+
+	// Check Context (User profile)
+	if user, ok := r.Context().Value("user").(*entities.User); ok && user.Language != "" {
+		targetLang = user.Language
+	} else if custom := r.Header.Get("X-Language"); custom != "" {
+		// Check Custom Header (e.g. forced by frontend)
+		targetLang = custom
+	} else {
+		// Check Accept-Language
+		acceptLang := r.Header.Get("Accept-Language")
+		tags, _, _ := language.ParseAcceptLanguage(acceptLang)
+		if len(tags) > 0 {
+			targetLang = tags[0].String()
+		}
+	}
+	return targetLang
+}
+
 func Error(w http.ResponseWriter, r *http.Request, err error, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(code)
+
 	if err == nil {
 		err = t.Errorf("nil err")
 	}
+
+	// 1. Determine Language
+	targetLang := DetectLanguage(r)
+
+	// 2. Load the map for that language
+	langMap := t.GetMapFor(targetLang)
+
+	// 3. Translate the error tree
+	finalMsg := t.Translate(err, langMap)
+
 	logErr := err
-	errorMsgJSON, err := json.Marshal(ErrorResponse{
-		err.Error(),
+	errorMsgJSON, marshalErr := json.Marshal(ErrorResponse{
+		Message: finalMsg,
 	})
-	if err != nil {
-		log.Println(err)
+	if marshalErr != nil {
+		log.Println(marshalErr)
 	} else {
 		if _, err = w.Write(errorMsgJSON); err != nil {
 			log.Printf("Error writing response: %v", err)

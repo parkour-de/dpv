@@ -47,7 +47,7 @@ func (h *ClubHandler) UploadDocument(w http.ResponseWriter, r *http.Request, ps 
 	}
 
 	api.SuccessJson(w, r, map[string]string{
-		"message":  t.T("document uploaded successfully"),
+		"message":  t.T(t.Errorf("document uploaded successfully"), api.DetectLanguage(r)),
 		"filename": filename,
 	})
 }

@@ -110,13 +110,13 @@ func TestMembership_InvalidTransitions(t *testing.T) {
 
 	// Cannot approve if not requested
 	err = s.Approve(ctx, key)
-	if err == nil || !strings.Contains(err.Error(), "Antrag kann nicht bewilligt werden") {
+	if err == nil || !strings.Contains(err.Error(), "cannot approve") {
 		t.Errorf("Expected 'cannot approve' error, got %v", err)
 	}
 
 	// Cannot deny if not requested
 	err = s.Deny(ctx, key)
-	if err == nil || !strings.Contains(err.Error(), "Antrag kann nicht abgelehnt werden") {
+	if err == nil || !strings.Contains(err.Error(), "cannot deny") {
 		t.Errorf("Expected 'cannot deny' error, got %v", err)
 	}
 
@@ -126,7 +126,7 @@ func TestMembership_InvalidTransitions(t *testing.T) {
 
 	// Cannot apply if already active
 	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}})
-	if err == nil || !strings.Contains(err.Error(), "Antrag kann nicht gestellt werden") {
+	if err == nil || !strings.Contains(err.Error(), "cannot apply") {
 		t.Errorf("Expected 'cannot apply' error, got %v", err)
 	}
 }

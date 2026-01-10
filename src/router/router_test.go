@@ -185,6 +185,7 @@ func TestDocumentUpload(t *testing.T) {
 	uploadURL := fmt.Sprintf("http://localhost:8084/dpv/clubs/%s/documents", clubKey)
 	req, _ = http.NewRequest("POST", uploadURL, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Language", "de")
 	req.SetBasicAuth("uploader@example.com", "UploaderPass123!")
 
 	resp, err := client.Do(req)

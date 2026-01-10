@@ -13,7 +13,7 @@ func TestIsStrongPassword(t *testing.T) {
 		{"ABCDEFGHIJ", false, "must not be only uppercase letters"},
 		{"abcABC123!@", true, ""},
 		{"aA1!aA1!aA1!", false, "must have at least 8 different glyphs"},
-		{"aA1!aA1!", false, "too short (min 10 characters), must have at least 8 different glyphs"},
+		{"aA1!aA1!", false, "too short (min 10 characters)"},
 		{"short1A!@", false, "too short (min 10 characters)"},
 		{"abcdefghijklmno", false, "must not be only lowercase letters"},
 		{"ABCDEFGHIJKLMNO", false, "must not be only uppercase letters"},

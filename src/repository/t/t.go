@@ -7,42 +7,125 @@ import (
 	"strings"
 )
 
-func T(text string) string {
-	val, ok := de[text]
-	if ok {
-		return val
-	}
-	return text
+// TranslatableError captures the intent to translate.
+type TranslatableError struct {
+	Key  string
+	Args []any
 }
 
-func Errorf(format string, a ...any) error {
-	return fmt.Errorf(T(format), a...)
+// Error implements the standard error interface with a fallback (e.g. English).
+func (e *TranslatableError) Error() string {
+	// Fallback logic: raw key + formatted args
+	return fmt.Sprintf(e.Key, e.Args...)
 }
 
-func Sprintf(format string, a ...any) string {
-	return fmt.Sprintf(T(format), a...)
-}
-
-var de = map[string]string{}
-
-func LoadDE(config *dpv.Config) error {
-	if config == nil {
-		return fmt.Errorf("config is not initialized")
-	}
-	path := config.Path + "strings_de.ini"
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		wd, _ := os.Getwd()
-		return fmt.Errorf("could not load strings_de.ini, looking for %v in %v: %w", path, wd, err)
-	}
-	for _, s := range strings.Split(string(bytes), "\n") {
-		arr := strings.Split(s, "=")
-		if len(arr) != 2 {
-			return fmt.Errorf("entry contains not exactly one equals sign: %v", s)
-		}
-		if len(arr[1]) > 0 {
-			de[arr[0]] = arr[1]
+// Unwrap allows standard errors.Is/As checks to work by unwrapping the *first* error found in Args.
+func (e *TranslatableError) Unwrap() error {
+	for _, arg := range e.Args {
+		if err, ok := arg.(error); ok {
+			return err
 		}
 	}
 	return nil
+}
+
+// Errorf creates the structured error.
+func Errorf(key string, args ...any) error {
+	return &TranslatableError{
+		Key:  key,
+		Args: args,
+	}
+}
+
+// Translate recursively translates a TranslatableError and its nested errors.
+func Translate(err error, langMap map[string]string) string {
+	if err == nil {
+		return ""
+	}
+
+	if tErr, ok := err.(*TranslatableError); ok {
+		translatedArgs := make([]any, len(tErr.Args))
+		for i, arg := range tErr.Args {
+			if argErr, isErr := arg.(error); isErr {
+				translatedArgs[i] = Translate(argErr, langMap)
+			} else {
+				translatedArgs[i] = arg
+			}
+		}
+
+		format, exists := langMap[tErr.Key]
+		if !exists {
+			format = tErr.Key
+		}
+
+		// Replace %w with %s because we are passing translated strings (recursive step)
+		format = strings.ReplaceAll(format, "%w", "%s")
+
+		if len(translatedArgs) == 0 {
+			return format
+		}
+		return fmt.Sprintf(format, translatedArgs...)
+	}
+
+	return err.Error()
+}
+
+var languages = make(map[string]map[string]string)
+
+func GetMapFor(lang string) map[string]string {
+	if m, ok := languages[lang]; ok {
+		return m
+	}
+	// Fallback to parts of the language tag (e.g. de-DE -> de)
+	if idx := strings.Index(lang, "-"); idx != -1 {
+		if m, ok := languages[lang[:idx]]; ok {
+			return m
+		}
+	}
+	return make(map[string]string)
+}
+
+func T(err error, lang string) string {
+	return Translate(err, GetMapFor(lang))
+}
+
+func LoadLanguages(config *dpv.Config) error {
+	if config == nil {
+		return fmt.Errorf("config is not initialized")
+	}
+
+	for _, lang := range config.Settings.SupportedLanguages {
+		path := config.Path + "strings_" + lang + ".ini"
+		m, err := loadFile(path)
+		if err != nil {
+			fmt.Printf("Warning: could not load %s: %v\n", path, err)
+			continue
+		}
+		languages[lang] = m
+	}
+	return nil
+}
+
+func loadFile(path string) (map[string]string, error) {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]string)
+	for _, s := range strings.Split(string(bytes), "\n") {
+		s = strings.TrimSpace(s)
+		if s == "" || strings.HasPrefix(s, ";") {
+			continue
+		}
+		arr := strings.SplitN(s, "=", 2)
+		if len(arr) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(arr[0])
+		val := strings.TrimSpace(arr[1])
+		if val != "" {
+			m[key] = val
+		}
+	}
+	return m, nil
 }

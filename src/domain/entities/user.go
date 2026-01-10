@@ -11,6 +11,7 @@ type User struct {
 	Roles         []string   `json:"roles"`
 	EmailVerified *time.Time `json:"email_verified,omitempty"`
 	Membership    Membership `json:"membership"`
+	Language      string     `json:"language"`
 }
 
 func (u *User) GetMembership() *Membership {

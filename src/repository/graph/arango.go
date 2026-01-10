@@ -117,8 +117,8 @@ func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
 	if err != nil {
 		return nil, nil, t.Errorf("could not initialise config instance: %w", err)
 	}
-	if err := t.LoadDE(config); err != nil {
-		log.Printf("Could not load strings_de.ini: %v", err)
+	if err := t.LoadLanguages(config); err != nil {
+		log.Printf("Could not load languages: %v", err)
 	}
 	c, err := Connect(config, true)
 	if err != nil {

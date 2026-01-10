@@ -7,6 +7,7 @@ import (
 	"dpv/dpv/src/repository/t"
 	"dpv/dpv/src/service/user"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -51,19 +52,21 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 	err := h.Service.CreateUser(context.Background(), userEntity, req.Password)
 	if err != nil {
 		// Map validation errors to 400, others to 500
-		switch err.Error() {
-		case t.T("firstname must not be empty"), t.T("lastname must not be empty"), t.T("email must not be empty"), t.T("password must not be empty"):
-			api.Error(w, r, err, http.StatusBadRequest)
-			return
-		}
-		if err.Error() == t.T("user with this email already exists") ||
-			strings.Contains(err.Error(), t.T("too short (min 10 characters)")) ||
-			strings.Contains(err.Error(), t.T("must not be only digits")) ||
-			strings.Contains(err.Error(), t.T("must not be only lowercase letters")) ||
-			strings.Contains(err.Error(), t.T("must not be only uppercase letters")) ||
-			strings.Contains(err.Error(), t.T("must have at least 8 different glyphs")) {
-			api.Error(w, r, err, http.StatusBadRequest)
-			return
+		var tErr *t.TranslatableError
+		if errors.As(err, &tErr) {
+			switch tErr.Key {
+			case "firstname must not be empty", "lastname must not be empty", "email must not be empty", "password must not be empty", "user with this email already exists":
+				api.Error(w, r, err, http.StatusBadRequest)
+				return
+			}
+			if strings.Contains(tErr.Key, "too short") ||
+				strings.Contains(tErr.Key, "must not be only digits") ||
+				strings.Contains(tErr.Key, "must not be only lowercase letters") ||
+				strings.Contains(tErr.Key, "must not be only uppercase letters") ||
+				strings.Contains(tErr.Key, "must have at least 8 different glyphs") {
+				api.Error(w, r, err, http.StatusBadRequest)
+				return
+			}
 		}
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
@@ -143,7 +146,7 @@ func (h *UserHandler) RequestEmailValidation(w http.ResponseWriter, r *http.Requ
 	}
 
 	api.SuccessJson(w, r, map[string]string{
-		"message": t.Sprintf("Validation email sent to %s", targetEmail),
+		"message": t.T(t.Errorf("Validation email sent to %s", targetEmail), api.DetectLanguage(r)),
 	})
 }
 
@@ -208,7 +211,7 @@ func (h *UserHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	api.SuccessJson(w, r, map[string]string{
-		"message": t.Sprintf("Password reset email sent to %s", req.Email),
+		"message": t.T(t.Errorf("Password reset email sent to %s", req.Email), api.DetectLanguage(r)),
 	})
 }
 
@@ -315,7 +318,7 @@ func (h *UserHandler) HandleResetPassword(w http.ResponseWriter, r *http.Request
 		return
 	}
 	api.SuccessJson(w, r, map[string]string{
-		"message": t.Sprintf("Password successfully changed"),
+		"message": t.T(t.Errorf("Password successfully changed"), api.DetectLanguage(r)),
 	})
 }
 

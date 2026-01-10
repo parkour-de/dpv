@@ -6,7 +6,6 @@ import (
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/security"
-	T "dpv/dpv/src/repository/t"
 	"testing"
 	"time"
 )
@@ -29,11 +28,11 @@ func TestCreateUser_Validation(t *testing.T) {
 		password string
 		errMsg   string
 	}{
-		{entities.User{FirstName: "", LastName: "N", Email: "e"}, "StrongPass1!", T.T("firstname must not be empty")},
-		{entities.User{FirstName: "V", LastName: "", Email: "e"}, "StrongPass1!", T.T("lastname must not be empty")},
-		{entities.User{FirstName: "V", LastName: "N", Email: ""}, "StrongPass1!", T.T("email must not be empty")},
-		{entities.User{FirstName: "V", LastName: "N", Email: "e"}, "", T.T("password must not be empty")},
-		{entities.User{FirstName: "V", LastName: "N", Email: "e"}, "1234567890", T.T("must not be only digits")},
+		{entities.User{FirstName: "", LastName: "N", Email: "e"}, "StrongPass1!", "firstname must not be empty"},
+		{entities.User{FirstName: "V", LastName: "", Email: "e"}, "StrongPass1!", "lastname must not be empty"},
+		{entities.User{FirstName: "V", LastName: "N", Email: ""}, "StrongPass1!", "email must not be empty"},
+		{entities.User{FirstName: "V", LastName: "N", Email: "e"}, "", "password must not be empty"},
+		{entities.User{FirstName: "V", LastName: "N", Email: "e"}, "1234567890", "must not be only digits"},
 	}
 	for _, c := range cases {
 		err := service.CreateUser(ctx, &c.user, c.password)
@@ -65,7 +64,7 @@ func TestCreateUser_DuplicateEmail(t *testing.T) {
 
 	// Second creation should fail due to duplicate email
 	err = service.CreateUser(ctx, user2, password)
-	if err == nil || err.Error() != T.T("user with this email already exists") {
+	if err == nil || err.Error() != "user with this email already exists" {
 		t.Errorf("expected duplicate email error, got '%v'", err)
 	}
 }
@@ -92,13 +91,13 @@ func TestUpdateMe(t *testing.T) {
 
 	// No fields to update
 	err = service.UpdateMe(userCtx, "", "")
-	if err == nil || err.Error() != T.T("no fields to update") {
+	if err == nil || err.Error() != "no fields to update" {
 		t.Errorf("Expected 'no fields to update' error, got '%v'", err)
 	}
 
 	// User not in context
 	err = service.UpdateMe(ctx, "New", "Name")
-	if err == nil || err.Error() != T.T("user not found in context") {
+	if err == nil || err.Error() != "user not found in context" {
 		t.Errorf("Expected 'user not found in context' error, got '%v'", err)
 	}
 }
@@ -149,13 +148,13 @@ func TestValidateEmail(t *testing.T) {
 
 	// Expired
 	err = service.ValidateEmail(ctx, user.Key, time.Now().Add(-time.Hour).Unix(), newEmail, token)
-	if err == nil || err.Error() != T.T("validation link has expired") {
+	if err == nil || err.Error() != "validation link has expired" {
 		t.Errorf("Expected 'expired' error, got '%v'", err)
 	}
 
 	// Invalid token
 	err = service.ValidateEmail(ctx, user.Key, expiry, newEmail, "invalid-token")
-	if err == nil || err.Error() != T.T("invalid validation token") {
+	if err == nil || err.Error() != "invalid validation token" {
 		t.Errorf("Expected 'invalid validation token' error, got '%v'", err)
 	}
 }
@@ -186,7 +185,7 @@ func TestValidatePasswordReset(t *testing.T) {
 
 	// Invalid token (old password hash in token data no longer matches)
 	err = service.ValidatePasswordReset(ctx, user.Key, expiry, token, "AnotherPass3!")
-	if err == nil || err.Error() != T.T("invalid password reset token") {
+	if err == nil || err.Error() != "invalid password reset token" {
 		t.Errorf("Expected 'invalid password reset token' error, got '%v'", err)
 	}
 }
