@@ -95,6 +95,13 @@ func LoadLanguages(config *dpv.Config) error {
 	}
 
 	for _, lang := range config.Settings.SupportedLanguages {
+		// English uses the raw keys as readable fallbacks and does not require a
+		// translation file. Skipping prevents noisy warnings about a missing
+		// strings_en.ini while still allowing "en" as a valid language choice.
+		if lang == "en" {
+			continue
+		}
+
 		path := config.Path + "strings_" + lang + ".ini"
 		m, err := loadFile(path)
 		if err != nil {

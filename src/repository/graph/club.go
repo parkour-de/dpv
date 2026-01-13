@@ -22,7 +22,7 @@ func (db *Db) CreateClub(ctx context.Context, club *entities.Club, userKey strin
 	// Create the club document
 	err := db.Clubs.Create(club, ctx)
 	if err != nil {
-		return err
+		return t.Errorf("could not create club document: %w", err)
 	}
 
 	// Create the 'authorizes' edge

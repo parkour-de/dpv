@@ -30,7 +30,7 @@ type CreateClubRequest struct {
 func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
+		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 
 	err = h.Service.CreateClub(r.Context(), clubEntity, user.Key)
 	if err != nil {
-		api.Error(w, r, err, http.StatusBadRequest)
+		api.Error(w, r, t.Errorf("could not create club: %w", err), http.StatusBadRequest)
 		return
 	}
 
@@ -66,14 +66,14 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
+		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
 	club, err := h.Service.GetClub(r.Context(), key, user)
 	if err != nil {
-		api.Error(w, r, err, http.StatusForbidden)
+		api.Error(w, r, t.Errorf("failed to get club: %w", err), http.StatusForbidden)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
+		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 
 	err = h.Service.UpdateClub(r.Context(), key, updates, user)
 	if err != nil {
-		api.Error(w, r, err, http.StatusBadRequest)
+		api.Error(w, r, t.Errorf("could not update club: %w", err), http.StatusBadRequest)
 		return
 	}
 
@@ -113,14 +113,14 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
+		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
 		return
 	}
 
 	key := ps.ByName("key")
 	err = h.Service.DeleteClub(r.Context(), key, user)
 	if err != nil {
-		api.Error(w, r, err, http.StatusBadRequest)
+		api.Error(w, r, t.Errorf("could not delete club: %w", err), http.StatusBadRequest)
 		return
 	}
 
@@ -164,7 +164,7 @@ func FilteredResponse(clubEntity *entities.Club) *entities.Club {
 func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
+		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 
 	err = h.Service.AddOwner(r.Context(), key, req.Email, user)
 	if err != nil {
-		api.Error(w, r, err, http.StatusBadRequest)
+		api.Error(w, r, t.Errorf("could not add owner: %w", err), http.StatusBadRequest)
 		return
 	}
 	// Return updated club
@@ -195,7 +195,7 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
+		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
 		return
 	}
 
@@ -204,7 +204,7 @@ func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps htt
 
 	err = h.Service.RemoveOwner(r.Context(), key, targetUserKey, user)
 	if err != nil {
-		api.Error(w, r, err, http.StatusBadRequest)
+		api.Error(w, r, t.Errorf("could not remove user from list of owners: %w", err), http.StatusBadRequest)
 		return
 	}
 	// Return updated club

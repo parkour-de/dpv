@@ -43,7 +43,7 @@ func (s *Service) IsAuthorized(ctx context.Context, user *entities.User, clubKey
 	}
 	administered, err := s.DB.GetAdministeredClubs(ctx, user.Key)
 	if err != nil {
-		return false, err
+		return false, t.Errorf("failed to load administered clubs for authorization: %w", err)
 	}
 	for _, c := range administered {
 		if c.GetKey() == clubKey {
@@ -57,7 +57,7 @@ func (s *Service) IsAuthorized(ctx context.Context, user *entities.User, clubKey
 func (s *Service) GetClub(ctx context.Context, key string, user *entities.User) (*entities.Club, error) {
 	authorized, err := s.IsAuthorized(ctx, user, key)
 	if err != nil {
-		return nil, err
+		return nil, t.Errorf("authorization check failed while getting club: %w", err)
 	}
 	if !authorized {
 		return nil, t.Errorf("unauthorized: you are not a board member or admin")
@@ -75,7 +75,7 @@ func (s *Service) ListClubs(ctx context.Context, userKey string) ([]entities.Clu
 func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string]interface{}, user *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, user, key)
 	if err != nil {
-		return err
+		return t.Errorf("authorization check failed while updating club: %w", err)
 	}
 	if !authorized {
 		return t.Errorf("unauthorized: you cannot update this club")
@@ -83,7 +83,7 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 
 	club, err := s.DB.GetClubByKey(ctx, key)
 	if err != nil {
-		return err
+		return t.Errorf("failed to load club for update: %w", err)
 	}
 
 	// Apply updates
@@ -110,14 +110,17 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 		club.Membership.Address = addr
 	}
 
-	return s.DB.UpdateClub(ctx, club)
+	if err := s.DB.UpdateClub(ctx, club); err != nil {
+		return t.Errorf("failed to update club: %w", err)
+	}
+	return nil
 }
 
 // DeleteClub deletes a club if the user is authorized.
 func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, user, key)
 	if err != nil {
-		return err
+		return t.Errorf("authorization check failed while deleting club: %w", err)
 	}
 	if !authorized {
 		return t.Errorf("unauthorized: you cannot delete this club")
@@ -125,17 +128,20 @@ func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.Use
 
 	club, err := s.DB.GetClubByKey(ctx, key)
 	if err != nil {
-		return err
+		return t.Errorf("failed to load club for deletion: %w", err)
 	}
 
-	return s.DB.DeleteClub(ctx, club)
+	if err := s.DB.DeleteClub(ctx, club); err != nil {
+		return t.Errorf("failed to delete club: %w", err)
+	}
+	return nil
 }
 
 // AddOwner adds a user as a club owner by email.
 func (s *Service) AddOwner(ctx context.Context, clubKey, email string, actor *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, actor, clubKey)
 	if err != nil {
-		return err
+		return t.Errorf("authorization check failed while adding owner: %w", err)
 	}
 	if !authorized {
 		return t.Errorf("unauthorized: you cannot manage owners for this club")
@@ -157,7 +163,7 @@ func (s *Service) AddOwner(ctx context.Context, clubKey, email string, actor *en
 func (s *Service) RemoveOwner(ctx context.Context, clubKey, targetUserKey string, actor *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, actor, clubKey)
 	if err != nil {
-		return err
+		return t.Errorf("authorization check failed while removing owner: %w", err)
 	}
 	if !authorized {
 		return t.Errorf("unauthorized: you cannot manage owners for this club")
@@ -171,7 +177,7 @@ func (s *Service) RemoveOwner(ctx context.Context, clubKey, targetUserKey string
 	// Rule: Cannot remove the last remaining owner
 	count, err := s.DB.CountVorstand(ctx, clubKey)
 	if err != nil {
-		return err
+		return t.Errorf("failed to count current owners: %w", err)
 	}
 	if count <= 1 {
 		// Verify if the target IS the one (should be if count is 1 and they exist)

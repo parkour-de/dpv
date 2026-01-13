@@ -27,7 +27,7 @@ func NewService(db *graph.Db) *Service {
 func (s *Service) Get(ctx context.Context, clubKey string, year int, user *entities.User) (*entities.Census, error) {
 	authorized, err := s.IsAuthorized(ctx, user, clubKey)
 	if err != nil {
-		return nil, err
+		return nil, t.Errorf("authorization check failed while getting census: %w", err)
 	}
 	if !authorized {
 		return nil, t.Errorf("unauthorized: you are not a board member or admin")
@@ -38,7 +38,7 @@ func (s *Service) Get(ctx context.Context, clubKey string, year int, user *entit
 func (s *Service) Upsert(ctx context.Context, clubKey string, censusData *entities.Census, user *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, user, clubKey)
 	if err != nil {
-		return err
+		return t.Errorf("authorization check failed while upserting census: %w", err)
 	}
 	if !authorized {
 		return t.Errorf("unauthorized: you are not a board member or admin")
@@ -53,7 +53,7 @@ func (s *Service) IsAuthorized(ctx context.Context, user *entities.User, clubKey
 	}
 	administered, err := s.Db.GetAdministeredClubs(ctx, user.Key)
 	if err != nil {
-		return false, err
+		return false, t.Errorf("failed to load administered clubs for census authorization: %w", err)
 	}
 	for _, c := range administered {
 		if c.GetKey() == clubKey {

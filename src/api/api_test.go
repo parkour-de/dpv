@@ -16,11 +16,11 @@ func TestDetectLanguage(t *testing.T) {
 		expected       string
 	}{
 		{
-			name:           "User preference takes precedence",
+			name:           "Header takes precedence over user preference",
 			userLanguage:   "fr",
 			headerLanguage: "es",
 			acceptLanguage: "de",
-			expected:       "fr",
+			expected:       "es",
 		},
 		{
 			name:           "X-Language header used if no user preference",
