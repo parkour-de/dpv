@@ -2,6 +2,7 @@ package router
 
 import (
 	"dpv/dpv/src/api"
+	censusEndpoints "dpv/dpv/src/endpoints/census"
 	"dpv/dpv/src/endpoints/clubs"
 	"dpv/dpv/src/endpoints/users"
 	"dpv/dpv/src/middleware"
@@ -9,6 +10,7 @@ import (
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/storage"
 	"dpv/dpv/src/repository/t"
+	"dpv/dpv/src/service/census"
 	"dpv/dpv/src/service/club"
 	"dpv/dpv/src/service/user"
 	"log"
@@ -48,6 +50,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	st := storage.NewStorage(dpv.ConfigInstance.Storage.DocumentPath)
 	clubService := club.NewService(db, st)
 	clubHandler := clubs.NewHandler(clubService)
+
+	censusService := census.NewService(db)
+	censusHandler := censusEndpoints.NewHandler(censusService)
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
@@ -91,6 +96,12 @@ func NewServer(configPath string, test bool) *http.Server {
 
 	r.POST("/dpv/clubs/:key/owners", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.AddOwner, db)))
 	r.DELETE("/dpv/clubs/:key/owners/:userKey", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.RemoveOwner, db)))
+
+	r.GET("/dpv/clubs/:key/census/:year", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(censusHandler.Get, db)))
+	r.PUT("/dpv/clubs/:key/census/:year", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(censusHandler.Upsert, db)))
+	r.GET("/dpv/census/sample", middleware.CORSMiddleware(func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		censusHandler.DownloadSample(w, r)
+	}))
 
 	r.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
 		log.Printf("panic: %+v", err)

@@ -9,6 +9,7 @@ types:
   Club: !include types/Club.raml
   Membership: !include types/Membership.raml
   ErrorResponse: !include types/errorResponse.raml
+  Census: !include types/Census.raml
 securitySchemes:
   basicAuth:
     type: Basic Authentication
@@ -373,6 +374,91 @@ securitySchemes:
                 properties:
                   message: string
                   filename: string
+      get:
+        description: List documents for the club
+        securedBy: [ basicAuth ]
+        responses:
+          200:
+            description: List of documents
+            body:
+              application/json:
+                type: array # object[]
+      /{filename}:
+        get:
+          description: Download a specific document
+          securedBy: [ basicAuth ]
+          responses:
+            200:
+              description: Document file
+    /download-documents:
+      get:
+        description: Download all documents as ZIP
+        securedBy: [ basicAuth ]
+        responses:
+          200:
+            description: ZIP file containing all documents
+            body:
+              application/zip:
+    /payment-details:
+      get:
+        description: Get SEPA/Payment details for the club
+        securedBy: [ basicAuth ]
+        responses:
+          200:
+            description: Payment details
+            body:
+              application/json:
+                type: object
+    /owners:
+      post:
+        description: Add an owner to the club
+        securedBy: [ basicAuth ]
+        body:
+          application/json:
+            type: object
+            properties:
+              email: string
+        responses:
+          200:
+            description: Owner added
+      /{userKey}:
+        delete:
+          description: Remove an owner from the club
+          securedBy: [ basicAuth ]
+          responses:
+            204:
+              description: Owner removed
+
+    /census/{year}:
+      get:
+        description: Get census data for a specific year
+        securedBy: [ basicAuth ]
+        responses:
+          200:
+            description: Census data
+            body:
+              application/json:
+                type: Census
+      put:
+        description: Upload census data (CSV)
+        securedBy: [ basicAuth ]
+        body:
+          multipart/form-data:
+             properties:
+               file:
+                 type: file
+        responses:
+          200:
+            description: Census data uploaded
+
+/census/sample:
+  get:
+    description: Download sample CSV for census
+    responses:
+      200:
+        description: CSV sample
+        body:
+          text/csv:
 
 /version:
   get:

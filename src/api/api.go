@@ -96,11 +96,14 @@ func DetectLanguage(r *http.Request) string {
 	targetLang := "en" // Default
 
 	// Check Context (User profile)
-	if user, ok := r.Context().Value("user").(*entities.User); ok && user.Language != "" {
-		targetLang = user.Language
+	// Check Query Param
+	if lang := r.URL.Query().Get("lang"); lang != "" {
+		targetLang = lang
 	} else if custom := r.Header.Get("X-Language"); custom != "" {
 		// Check Custom Header (e.g. forced by frontend)
 		targetLang = custom
+	} else if user, ok := r.Context().Value("user").(*entities.User); ok && user.Language != "" {
+		targetLang = user.Language
 	} else {
 		// Check Accept-Language
 		acceptLang := r.Header.Get("Accept-Language")

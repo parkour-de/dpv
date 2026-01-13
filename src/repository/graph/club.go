@@ -82,7 +82,12 @@ func (db *Db) GetClubByKey(ctx context.Context, key string) (*entities.Club, err
 				FILTER e.type == "authorizes" AND e.role == "vorstand"
 				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname}
 		)
-		RETURN MERGE(club, {vorstand: vorstand})
+		LET census = (
+			FOR v, e IN 1..1 OUTBOUND CONCAT("clubs/", @key) edges
+				FILTER e.type == "census"
+				RETURN {year: e.year, count: v.memberCount}
+		)
+		RETURN MERGE(club, {vorstand: vorstand, census: census})
 	`
 	bindVars := map[string]interface{}{
 		"key": key,
