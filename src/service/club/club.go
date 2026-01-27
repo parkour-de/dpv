@@ -7,6 +7,7 @@ import (
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/storage"
 	"dpv/dpv/src/repository/t"
+	"strings"
 )
 
 type Service struct {
@@ -103,8 +104,13 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if iban, ok := updates["iban"].(string); ok {
 		club.Membership.IBAN = iban
 	}
+	if holder, ok := updates["account_holder"].(string); ok {
+		club.Membership.AccountHolder = holder
+	}
 	if sepam, ok := updates["sepa_mandate_number"].(string); ok {
-		club.Membership.SEPAMandateNumber = sepam
+		if api.IsAdmin(*user) {
+			club.Membership.SEPAMandateNumber = sepam
+		}
 	}
 	if addr, ok := updates["address"].(string); ok {
 		club.Membership.Address = addr
@@ -186,4 +192,12 @@ func (s *Service) RemoveOwner(ctx context.Context, clubKey, targetUserKey string
 	}
 
 	return s.DB.RemoveVorstand(ctx, clubKey, targetUserKey)
+}
+
+// SearchClubs searches for clubs by name.
+func (s *Service) SearchClubs(ctx context.Context, query string) ([]entities.Club, error) {
+	if strings.TrimSpace(query) == "" {
+		return []entities.Club{}, nil
+	}
+	return s.DB.SearchClubs(ctx, query)
 }

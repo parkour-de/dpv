@@ -80,7 +80,7 @@ func (db *Db) GetClubByKey(ctx context.Context, key string) (*entities.Club, err
 		LET vorstand = (
 			FOR v, e IN 1..1 INBOUND CONCAT("clubs/", @key) edges
 				FILTER e.type == "authorizes" AND e.role == "vorstand"
-				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname}
+				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname, email: v.email}
 		)
 		LET census = (
 			FOR v, e IN 1..1 OUTBOUND CONCAT("clubs/", @key) edges
@@ -243,4 +243,38 @@ func (db *Db) CountVorstand(ctx context.Context, clubKey string) (int, error) {
 		return 0, t.Errorf("failed to read count: %w", err)
 	}
 	return count, nil
+}
+
+// SearchClubs searches for clubs by name using ArangoSearch.
+func (db *Db) SearchClubs(ctx context.Context, text string) ([]entities.Club, error) {
+	query := `
+		FOR club IN clubs_search
+			SEARCH ANALYZER(TOKENS(@text, "text_de") ALL == club.name, "text_de")
+			SORT BM25(club) DESC
+			LIMIT 10
+			RETURN club
+	`
+	bindVars := map[string]interface{}{
+		"text": text,
+	}
+
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return nil, t.Errorf("search for clubs failed: %w", err)
+	}
+	defer cursor.Close()
+
+	var result []entities.Club
+	for {
+		var doc entities.Club
+		_, err := cursor.ReadDocument(ctx, &doc)
+		if shared.IsNoMoreDocuments(err) {
+			break
+		} else if err != nil {
+			return nil, t.Errorf("obtaining club document failed: %w", err)
+		}
+		result = append(result, doc)
+	}
+
+	return result, nil
 }

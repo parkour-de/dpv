@@ -80,6 +80,7 @@ func NewServer(configPath string, test bool) *http.Server {
 
 	r.POST("/dpv/clubs", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Create, db)))
 	r.GET("/dpv/clubs", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.List, db)))
+	r.GET("/dpv/search/clubs", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Search, db)))
 	r.GET("/dpv/clubs/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Get, db)))
 	r.PATCH("/dpv/clubs/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Update, db)))
 	r.DELETE("/dpv/clubs/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.Delete, db)))
@@ -91,6 +92,7 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.POST("/dpv/clubs/:key/documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.UploadDocument, db)))
 	r.GET("/dpv/clubs/:key/documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.ListDocuments, db)))
 	r.GET("/dpv/clubs/:key/documents/:filename", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.GetDocument, db)))
+	r.DELETE("/dpv/clubs/:key/documents/:filename", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.DeleteDocument, db)))
 	r.GET("/dpv/clubs/:key/download-documents", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.DownloadAllDocuments, db)))
 	r.GET("/dpv/clubs/:key/payment-details", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(clubHandler.GetPaymentDetails, db)))
 

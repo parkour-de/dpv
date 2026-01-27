@@ -101,6 +101,16 @@ func GetOrCreateCollection(db arangodb.Database, name string, edges bool) (arang
 	}
 }
 
+func GetOrCreateView(db arangodb.Database, name string, properties *arangodb.ArangoSearchViewProperties) (arangodb.View, error) {
+	if ok, err := db.ViewExists(context.Background(), name); !ok || err != nil {
+		if err != nil {
+			return nil, t.Errorf("could not check if view exists: %w", err)
+		}
+		return db.CreateArangoSearchView(context.Background(), name, properties)
+	}
+	return db.View(context.Background(), name)
+}
+
 var fields map[string]arangodb.ArangoSearchElementProperties
 
 func NewEntityManager[T Entity](db arangodb.Database, name string, edges bool, constructor func() T) (EntityManager[T], error) {

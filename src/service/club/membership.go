@@ -4,10 +4,11 @@ import (
 	"context"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
+	"time"
 )
 
 // Apply marks a club's membership as requested.
-func (s *Service) Apply(ctx context.Context, key string, user *entities.User) error {
+func (s *Service) Apply(ctx context.Context, key string, user *entities.User, beginDate int64) error {
 	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return t.Errorf("failed to load club for membership application: %w", err)
@@ -19,6 +20,10 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User) er
 	}
 
 	m.Status = "requested"
+	m.EndDate = 0
+	if beginDate > 0 {
+		m.BeginDate = beginDate
+	}
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club for membership application: %w", err)
 	}
@@ -26,7 +31,7 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User) er
 }
 
 // Approve marks a club's membership as approved.
-func (s *Service) Approve(ctx context.Context, key string) error {
+func (s *Service) Approve(ctx context.Context, key string, beginDate int64) error {
 	club, err := s.DB.GetClubByKey(ctx, key)
 	if err != nil {
 		return t.Errorf("failed to load club for approval: %w", err)
@@ -38,6 +43,12 @@ func (s *Service) Approve(ctx context.Context, key string) error {
 	}
 
 	m.Status = "active"
+	m.EndDate = 0
+	if beginDate > 0 {
+		m.BeginDate = beginDate
+	} else if m.BeginDate == 0 {
+		m.BeginDate = time.Now().Unix()
+	}
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club for membership approval: %w", err)
 	}
@@ -64,7 +75,7 @@ func (s *Service) Deny(ctx context.Context, key string) error {
 }
 
 // Cancel marks a club's membership as cancelled or none.
-func (s *Service) Cancel(ctx context.Context, key string, user *entities.User) error {
+func (s *Service) Cancel(ctx context.Context, key string, user *entities.User, endDate int64) error {
 	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return t.Errorf("failed to load club for membership cancellation: %w", err)
@@ -73,6 +84,9 @@ func (s *Service) Cancel(ctx context.Context, key string, user *entities.User) e
 	m := club.GetMembership()
 	if m.Status == "active" {
 		m.Status = "cancelled"
+		if endDate > 0 {
+			m.EndDate = endDate
+		}
 	} else {
 		m.Status = "inactive"
 	}

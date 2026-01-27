@@ -139,3 +139,12 @@ func (s *Storage) GetDocumentPath(entityType, entityKey, filename string) (strin
 
 	return path, nil
 }
+
+// DeleteDocument removes a document from the storage.
+func (s *Storage) DeleteDocument(entityType, entityKey, filename string) error {
+	path, err := s.GetDocumentPath(entityType, entityKey, filename)
+	if err != nil {
+		return err
+	}
+	return os.Remove(path)
+}

@@ -231,6 +231,22 @@ securitySchemes:
             type: User
       403:
         description: Forbidden - requires global admin
+/search:
+  /clubs:
+    get:
+      description: Search for clubs (Autocomplete / Duplicate prevention)
+      securedBy: [ basicAuth ]
+      queryParameters:
+        q:
+          type: string
+          required: true
+          description: Search query (min 3 characters)
+      responses:
+        200:
+          description: List of matching clubs
+          body:
+            application/json:
+              type: Club[]
 
 /clubs:
   securedBy: [ basicAuth ]
@@ -335,12 +351,28 @@ securitySchemes:
     /apply:
       post:
         description: Apply for membership
+        body:
+          application/json:
+            type: object
+            properties:
+              begin_date:
+                type: integer
+                required: false
+                description: Desired start date (Unix timestamp)
         responses:
           200:
             description: Application submitted
     /approve:
       post:
         description: Approve membership application (Admin only)
+        body:
+          application/json:
+            type: object
+            properties:
+              begin_date:
+                type: integer
+                required: false
+                description: Official start date (Unix timestamp)
         responses:
           200:
             description: Membership approved
@@ -353,6 +385,14 @@ securitySchemes:
     /cancel:
       post:
         description: Cancel or reset membership
+        body:
+          application/json:
+            type: object
+            properties:
+              end_date:
+                type: integer
+                required: false
+                description: Cancellation date (Unix timestamp)
         responses:
           200:
             description: Membership cancelled/reset
@@ -390,6 +430,12 @@ securitySchemes:
           responses:
             200:
               description: Document file
+        delete:
+          description: Delete a specific document (Admin or Owner in non-active states)
+          securedBy: [ basicAuth ]
+          responses:
+            204:
+              description: Document deleted
     /download-documents:
       get:
         description: Download all documents as ZIP

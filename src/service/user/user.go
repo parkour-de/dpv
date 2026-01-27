@@ -50,7 +50,16 @@ func (s *Service) CreateUser(ctx context.Context, user *entities.User, password 
 		return t.Errorf("could not hash password: %w", err)
 	}
 	user.PasswordHash = hash
-	return s.DB.Users.Create(user, ctx)
+	err = s.DB.Users.Create(user, ctx)
+	if err != nil {
+		return err
+	}
+
+	// Send welcome email
+	emailService := email.NewService(dpv.ConfigInstance)
+	_ = emailService.SendWelcomeEmail(user) // Ignore error for now, don't block registration
+
+	return nil
 }
 
 func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName, newLanguage string) error {

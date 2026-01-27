@@ -3,6 +3,7 @@ package clubs
 import (
 	"dpv/dpv/src/api"
 	"dpv/dpv/src/repository/t"
+	"encoding/json"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,8 +17,13 @@ func (h *ClubHandler) Apply(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
+	var req struct {
+		BeginDate int64 `json:"begin_date"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req) // Ignore error, optional
+
 	key := ps.ByName("key")
-	err = h.Service.Apply(r.Context(), key, user)
+	err = h.Service.Apply(r.Context(), key, user, req.BeginDate)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -34,8 +40,13 @@ func (h *ClubHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	var req struct {
+		BeginDate int64 `json:"begin_date"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req) // Ignore error, optional
+
 	key := ps.ByName("key")
-	err = h.Service.Approve(r.Context(), key)
+	err = h.Service.Approve(r.Context(), key, req.BeginDate)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -70,8 +81,13 @@ func (h *ClubHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
+	var req struct {
+		EndDate int64 `json:"end_date"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req) // Ignore error, optional
+
 	key := ps.ByName("key")
-	err = h.Service.Cancel(r.Context(), key, user)
+	err = h.Service.Cancel(r.Context(), key, user, req.EndDate)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return

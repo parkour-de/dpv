@@ -50,10 +50,14 @@ func setupServer(t *testing.T, port string) *http.Server {
 		t.Fatalf("failed to write config: %v", err)
 	}
 
-	// Copy strings_de.ini so translations still work
-	translations, err := os.ReadFile("../../strings_de.ini")
-	if err == nil {
-		_ = os.WriteFile(filepath.Join(tempDir, "strings_de.ini"), translations, 0644)
+	// Copy all strings_*.ini so translations still work
+	matches, _ := filepath.Glob("../../strings_*.ini")
+	for _, match := range matches {
+		filename := filepath.Base(match)
+		data, err := os.ReadFile(match)
+		if err == nil {
+			_ = os.WriteFile(filepath.Join(tempDir, filename), data, 0644)
+		}
 	}
 
 	server := NewServer(configPath, true)

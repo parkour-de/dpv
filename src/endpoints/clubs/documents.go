@@ -178,3 +178,42 @@ func (h *ClubHandler) DownloadAllDocuments(w http.ResponseWriter, r *http.Reques
 		f.Close()
 	}
 }
+
+// DeleteDocument handles document deletion.
+func (h *ClubHandler) DeleteDocument(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	key := ps.ByName("key")
+	filename := ps.ByName("filename")
+
+	club, err := h.Service.GetClub(r.Context(), key, user)
+	if err != nil {
+		api.Error(w, r, err, http.StatusForbidden)
+		return
+	}
+
+	isAdmin := api.IsAdmin(*user)
+	status := club.Membership.Status
+
+	// Authorization logic:
+	// 1. Admins can delete anything.
+	// 2. Owners can only delete if status is NOT 'requested' and NOT 'active'.
+	if !isAdmin {
+		if status == "requested" || status == "active" {
+			api.Error(w, r, t.Errorf("cannot delete documents while membership is requested or active"), http.StatusForbidden)
+			return
+		}
+	}
+
+	err = h.Service.Storage.DeleteDocument("clubs", key, filename)
+	if err != nil {
+		api.Error(w, r, t.Errorf("failed to delete document: %w", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

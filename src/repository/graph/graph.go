@@ -33,6 +33,23 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Initialize ArangoSearch view for clubs
+	_, err = GetOrCreateView(database, "clubs_search", &arangodb.ArangoSearchViewProperties{
+		Links: map[string]arangodb.ArangoSearchElementProperties{
+			"clubs": {
+				Fields: map[string]arangodb.ArangoSearchElementProperties{
+					"name": {
+						Analyzers: []string{"text_de"},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, t.Errorf("could not get or create clubs_search view: %w", err)
+	}
+
 	return &Db{
 		database,
 		users,

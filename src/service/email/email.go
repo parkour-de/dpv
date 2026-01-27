@@ -144,6 +144,95 @@ func (s *Service) SendPasswordResetEmail(data PasswordResetData) error {
 	return writer.Close()
 }
 
+// SendWelcomeEmail sends a welcome email to a new user
+func (s *Service) SendWelcomeEmail(user *entities.User) error {
+	subject := "Willkommen beim Deutschen Parkour Verband"
+	textBody := fmt.Sprintf(`DEUTSCHER PARKOUR VERBAND
+Willkommen
+
+Hallo %s %s,
+
+vielen Dank für Ihre Registrierung in der DPV-Mitgliederverwaltung! 
+Sie können sich ab sofort mit Ihrer E-Mail-Adresse %s anmelden.
+
+In der Mitgliederverwaltung können Sie Ihre Vereine anlegen, Mitgliedschaften beantragen und Bestandsmeldungen abgeben.
+
+Hier geht es zum Login: %s
+
+Viel Erfolg bei Ihrer Vereinsarbeit!
+
+© %d Deutscher Parkour Verband`,
+		user.FirstName, user.LastName,
+		user.Email,
+		s.Config.Settings.BaseURL,
+		time.Now().Year())
+
+	htmlBody := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="de">
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px">
+    <div style="background-color: #2c5aa0; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0">
+        <h1>Willkommen beim DPV</h1>
+    </div>
+    <div style="background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px">
+        <p>Hallo %s %s,</p>
+        <p>vielen Dank für Ihre Registrierung in der DPV-Mitgliederverwaltung!</p>
+        <p>Sie können sich ab sofort mit Ihrer E-Mail-Adresse <strong>%s</strong> anmelden.</p>
+        <p style="text-align: center;">
+            <a href="%s" style="display: inline-block; background-color: #2c5aa0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0"><span style="color: white">Zum Login</span></a>
+        </p>
+        <p>In der Mitgliederverwaltung können Sie Ihre Vereine anlegen, Mitgliedschaften beantragen und Bestandsmeldungen abgeben.</p>
+    </div>
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666">
+        <p>© %d Deutscher Parkour Verband</p>
+    </div>
+</body>
+</html>`,
+		user.FirstName, user.LastName,
+		user.Email,
+		s.Config.Settings.BaseURL,
+		time.Now().Year())
+
+	return s.sendGenericEmail(user.Email, subject, textBody, htmlBody)
+}
+
+func (s *Service) sendGenericEmail(to, subject, textBody, htmlBody string) error {
+	auth := smtp.PlainAuth("", s.Config.Email.SMTPUsername, s.Config.Email.SMTPPassword, s.Config.Email.SMTPHost)
+	tlsConfig := &tls.Config{InsecureSkipVerify: false, ServerName: s.Config.Email.SMTPHost}
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.Config.Email.SMTPHost, s.Config.Email.SMTPPort), tlsConfig)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	client, err := smtp.NewClient(conn, s.Config.Email.SMTPHost)
+	if err != nil {
+		return err
+	}
+	defer client.Quit()
+	if err = client.Auth(auth); err != nil {
+		return err
+	}
+	if err = client.Mail(s.Config.Email.FromAddress); err != nil {
+		return err
+	}
+	if err = client.Rcpt(to); err != nil {
+		return err
+	}
+	writer, err := client.Data()
+	if err != nil {
+		return err
+	}
+	messageID := fmt.Sprintf("<%d.%s@parkour-deutschland.de>", time.Now().UnixNano(), to)
+	boundary := fmt.Sprintf("boundary_%d", time.Now().UnixNano())
+	message := fmt.Sprintf("Message-ID: %s\r\nDate: %s\r\nMIME-Version: 1.0\r\nFrom: %s <%s>\r\nTo: <%s>\r\nSubject: %s\r\nContent-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n--%s\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n\r\n--%s\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n%s\r\n\r\n--%s--",
+		messageID, time.Now().Format(time.RFC1123Z), s.Config.Email.FromName, s.Config.Email.FromAddress, to, s.encodeSubjectIfNeeded(subject), boundary, boundary, textBody, boundary, s.quotedPrintableEncode(htmlBody), boundary)
+
+	_, err = writer.Write([]byte(message))
+	if err != nil {
+		return err
+	}
+	return writer.Close()
+}
+
 func (s *Service) generateValidationEmail(data ValidationData) string {
 	// Generate Message-ID
 	messageID := fmt.Sprintf("<%d.%s@parkour-deutschland.de>",
