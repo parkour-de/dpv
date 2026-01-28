@@ -15,12 +15,13 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 	}
 
 	m := club.GetMembership()
-	if m.Status != "inactive" && m.Status != "cancelled" {
+	if m.Status != "inactive" && m.Status != "cancelled" && m.Status != "denied" {
 		return t.Errorf("cannot apply: current status is %s", m.Status)
 	}
 
 	m.Status = "requested"
 	m.EndDate = 0
+	m.BeginDate = 0
 	if beginDate > 0 {
 		m.BeginDate = beginDate
 	}
@@ -86,9 +87,13 @@ func (s *Service) Cancel(ctx context.Context, key string, user *entities.User, e
 		m.Status = "cancelled"
 		if endDate > 0 {
 			m.EndDate = endDate
+		} else {
+			m.EndDate = time.Now().Unix()
 		}
 	} else {
 		m.Status = "inactive"
+		m.BeginDate = 0
+		m.EndDate = 0
 	}
 
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
