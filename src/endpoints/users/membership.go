@@ -1,4 +1,4 @@
-package clubs
+package users
 
 import (
 	"context"
@@ -9,22 +9,19 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// Apply handles membership application.
-func (h *ClubHandler) Apply(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (h *UserHandler) Apply(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	key := ps.ByName("key")
 	membership.HandleApply(w, r, func(ctx context.Context, beginDate int64) error {
-		return h.Service.Apply(ctx, key, user, beginDate)
+		return h.Service.Apply(ctx, user.Key, beginDate)
 	})
 }
 
-// Approve handles membership approval (Admin only).
-func (h *ClubHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (h *UserHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
@@ -37,8 +34,7 @@ func (h *ClubHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprou
 	})
 }
 
-// Deny handles membership denial (Admin only).
-func (h *ClubHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (h *UserHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
@@ -51,9 +47,8 @@ func (h *ClubHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter
 	})
 }
 
-// Cancel handles membership cancellation.
-func (h *ClubHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, err := api.GetUserFromContext(r)
+func (h *UserHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
@@ -61,6 +56,18 @@ func (h *ClubHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprout
 
 	key := ps.ByName("key")
 	membership.HandleCancel(w, r, func(ctx context.Context, endDate int64) error {
-		return h.Service.Cancel(ctx, key, user, endDate)
+		return h.Service.Cancel(ctx, key, endDate)
+	})
+}
+
+func (h *UserHandler) CancelMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	user, err := api.GetUserFromContext(r)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	membership.HandleCancel(w, r, func(ctx context.Context, endDate int64) error {
+		return h.Service.Cancel(ctx, user.Key, endDate)
 	})
 }

@@ -62,28 +62,51 @@ func (s *Service) CreateUser(ctx context.Context, user *entities.User, password 
 	return nil
 }
 
-func (s *Service) UpdateMe(ctx context.Context, newFirstName, newLastName, newLanguage string) error {
+func (s *Service) List(ctx context.Context, memStatus, hasClub string) ([]entities.User, error) {
+	return s.DB.GetUsersByFilter(ctx, memStatus, hasClub)
+}
+
+func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) error {
 	user, ok := ctx.Value("user").(*entities.User)
 	if !ok || user == nil {
 		return t.Errorf("user not found in context")
 	}
 	updated := false
-	if newFirstName != "" {
-		user.FirstName = newFirstName
+
+	if first, ok := updates["firstname"].(string); ok && first != "" {
+		user.FirstName = first
 		updated = true
 	}
-	if newLastName != "" {
-		user.LastName = newLastName
+	if last, ok := updates["lastname"].(string); ok && last != "" {
+		user.LastName = last
 		updated = true
 	}
-	// Handle language: "default" is a tombstone to clear the preference
-	if newLanguage == "default" {
-		user.Language = ""
-		updated = true
-	} else if newLanguage != "" {
-		user.Language = newLanguage
+	if lang, ok := updates["language"].(string); ok {
+		if lang == "default" {
+			user.Language = ""
+		} else {
+			user.Language = lang
+		}
 		updated = true
 	}
+
+	if address, ok := updates["address"].(string); ok {
+		user.Membership.Address = address
+		updated = true
+	}
+	if iban, ok := updates["iban"].(string); ok {
+		user.Membership.IBAN = iban
+		updated = true
+	}
+	if holder, ok := updates["account_holder"].(string); ok {
+		user.Membership.AccountHolder = holder
+		updated = true
+	}
+	if sepa, ok := updates["sepa_mandate_number"].(string); ok {
+		user.Membership.SEPAMandateNumber = sepa
+		updated = true
+	}
+
 	if !updated {
 		return t.Errorf("no fields to update")
 	}

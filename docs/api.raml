@@ -56,6 +56,44 @@ securitySchemes:
           body:
             application/json:
               type: User
+    /apply:
+      post:
+        description: Apply for active membership
+        securedBy: [ basicAuth ]
+        body:
+          application/json:
+            type: object
+            properties:
+              begin_date?: integer
+        responses:
+          200:
+            description: Application submitted
+    /cancel:
+      post:
+        description: Cancel active membership
+        securedBy: [ basicAuth ]
+        body:
+          application/json:
+            type: object
+            properties:
+              end_date?: integer
+        responses:
+          200:
+            description: Membership cancelled
+    /payment-details:
+      get:
+        description: Get the current user's unmasked payment information
+        securedBy: [ basicAuth ]
+        responses:
+          200:
+            description: Payment information
+            body:
+              application/json:
+                type: object
+                properties:
+                  iban: string
+                  account_holder?: string
+                  sepa_mandate_number?: string
   /request-email-validation:
     post:
       description: Request a validation email for the user's email address. Requires authentication.
@@ -212,44 +250,99 @@ securitySchemes:
           body:
             application/json:
               type: ErrorResponse
-/admin/users/{key}/roles:
-  patch:
-    description: Update a user's roles (Admin only)
+  get:
+    description: List users. Admins see all users.
     securedBy: [ basicAuth ]
-    body:
-      application/json:
-        type: object
-        properties:
-          roles:
-            type: string[]
-            example: ["admin", "active-admin"]
+    queryParameters:
+      membership_status?:
+        type: string
+        description: Filter by membership status
+      has_club?:
+        type: string
+        description: Filter by presence of a vorstand edge
     responses:
       200:
-        description: Roles updated successfully
+        description: List of matching users
+        body:
+          application/json:
+            type: User[]
+
+/user/{key}:
+  securedBy: [ basicAuth ]
+  get:
+    description: Get a specific user by key (Admin only)
+    responses:
+      200:
+        description: User details
         body:
           application/json:
             type: User
-      403:
-        description: Forbidden - requires global admin
-/search:
-  /clubs:
-    get:
-      description: Search for clubs (Autocomplete / Duplicate prevention)
-      securedBy: [ basicAuth ]
-      queryParameters:
-        q:
-          type: string
-          required: true
-          description: Search query (min 3 characters)
+  /roles:
+    patch:
+      description: Update a user's roles (Admin only)
+      body:
+        application/json:
+          type: object
+          properties:
+            roles:
+              type: string[]
+              example: ["admin", "active-admin"]
       responses:
         200:
-          description: List of matching clubs
+          description: Roles updated successfully
           body:
             application/json:
-              type: Club[]
-
+              type: User
+        403:
+          description: Forbidden - requires global admin
+  /approve:
+    post:
+      description: Approve user membership application (Admin only)
+      body:
+        application/json:
+          type: object
+          properties:
+            begin_date?: integer
+      responses:
+        200:
+          description: Membership approved
+  /deny:
+    post:
+      description: Deny user membership application (Admin only)
+      responses:
+        200:
+          description: Membership denied
+  /cancel:
+    post:
+      description: Cancel user membership (Admin only)
+      body:
+        application/json:
+          type: object
+          properties:
+            end_date?: integer
+      responses:
+        200:
+          description: Membership cancelled
 /clubs:
   securedBy: [ basicAuth ]
+  get:
+    description: List clubs. Admins see all clubs with pagination/filtering; users see clubs they administer.
+    queryParameters:
+      status?:
+        type: string
+        description: Filter by status (inactive, requested, active, denied, cancelled)
+      skip?:
+        type: integer
+        default: 0
+      limit?:
+        type: integer
+        default: 100
+    responses:
+      200:
+        description: List of clubs
+        body:
+          application/json:
+            type: Club[]
   post:
     description: Create a new club
     body:
@@ -276,24 +369,22 @@ securitySchemes:
         body:
           application/json:
             type: Club
-  get:
-    description: List clubs. Admins see all clubs with pagination/filtering; users see clubs they administer.
-    queryParameters:
-      status?:
-        type: string
-        description: Filter by status (inactive, requested, active, denied, cancelled)
-      skip?:
-        type: integer
-        default: 0
-      limit?:
-        type: integer
-        default: 100
-    responses:
-      200:
-        description: List of clubs
-        body:
-          application/json:
-            type: Club[]
+  /search:
+    get:
+      description: Search for clubs (Autocomplete / Duplicate prevention)
+      queryParameters:
+        q:
+          type: string
+          required: true
+          description: Search query (min 3 characters)
+      responses:
+        200:
+          description: List of matching clubs
+          body:
+            application/json:
+              type: Club[]
+
+/club:
   /{key}:
     get:
       description: Get details of a specific club

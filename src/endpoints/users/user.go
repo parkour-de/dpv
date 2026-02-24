@@ -86,6 +86,50 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	api.SuccessJson(w, r, resp)
 }
 
+// Get returns a specific user for admin
+func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+	key := ps.ByName("key")
+	userEntity, err := h.Service.DB.Users.Read(key, r.Context())
+	if err != nil {
+		api.Error(w, r, t.Errorf("user not found"), http.StatusNotFound)
+		return
+	}
+	api.SuccessJson(w, r, filteredResponse(userEntity))
+}
+
+// List returns users dynamically filtered for admin
+func (h *UserHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	memStatus := r.URL.Query().Get("membership_status")
+	hasClub := r.URL.Query().Get("has_club")
+
+	users, err := h.Service.List(r.Context(), memStatus, hasClub)
+	if err != nil {
+		api.Error(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	var resp []*entities.User
+	for _, u := range users {
+		userCopy := u
+		resp = append(resp, filteredResponse(&userCopy))
+	}
+	if resp == nil {
+		resp = make([]*entities.User, 0)
+	}
+	api.SuccessJson(w, r, resp)
+}
+
 // UpdateMe allows the user to update their vorname and/or name
 func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	userEntity, err := api.GetUserFromContext(r)
@@ -94,21 +138,19 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 
-	var req struct {
-		FirstName string `json:"firstname,omitempty"`
-		LastName  string `json:"lastname,omitempty"`
-		Language  string `json:"language,omitempty"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var updates map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
 		return
 	}
 
-	req.FirstName = strings.TrimSpace(req.FirstName)
-	req.LastName = strings.TrimSpace(req.LastName)
-	req.Language = strings.TrimSpace(req.Language)
+	for k, v := range updates {
+		if s, ok := v.(string); ok {
+			updates[k] = strings.TrimSpace(s)
+		}
+	}
 
-	err = h.Service.UpdateMe(r.Context(), req.FirstName, req.LastName, req.Language)
+	err = h.Service.UpdateMe(r.Context(), updates)
 	if err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
@@ -364,12 +406,18 @@ func filteredResponse(userEntity *entities.User) *entities.User {
 			Created:  userEntity.Created,
 			Modified: userEntity.Modified,
 		},
-		Email:      userEntity.Email,
-		LastName:   userEntity.LastName,
-		FirstName:  userEntity.FirstName,
-		Roles:      userEntity.Roles,
-		Membership: userEntity.Membership,
-		Language:   userEntity.Language,
+		Email:     userEntity.Email,
+		LastName:  userEntity.LastName,
+		FirstName: userEntity.FirstName,
+		Roles:     userEntity.Roles,
+		Membership: entities.Membership{
+			Status:       userEntity.Membership.Status,
+			Contribution: userEntity.Membership.Contribution,
+			Address:      userEntity.Membership.Address,
+			BeginDate:    userEntity.Membership.BeginDate,
+			EndDate:      userEntity.Membership.EndDate,
+		},
+		Language: userEntity.Language,
 	}
 	return resp
 }

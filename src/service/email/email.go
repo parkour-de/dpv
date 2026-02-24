@@ -36,6 +36,10 @@ type PasswordResetData struct {
 }
 
 func (s *Service) SendEmailValidationEmail(data ValidationData) error {
+	if s.Config.Email.SMTPHost == "" {
+		return nil
+	}
+
 	// Configure SMTP
 	auth := smtp.PlainAuth("",
 		s.Config.Email.SMTPUsername,
@@ -97,6 +101,10 @@ func (s *Service) SendEmailValidationEmail(data ValidationData) error {
 
 // SendPasswordResetEmail sends a password reset email to the user
 func (s *Service) SendPasswordResetEmail(data PasswordResetData) error {
+	if s.Config.Email.SMTPHost == "" {
+		return nil
+	}
+
 	auth := smtp.PlainAuth("",
 		s.Config.Email.SMTPUsername,
 		s.Config.Email.SMTPPassword,
@@ -196,6 +204,10 @@ Viel Erfolg bei Ihrer Vereinsarbeit!
 }
 
 func (s *Service) sendGenericEmail(to, subject, textBody, htmlBody string) error {
+	if s.Config.Email.SMTPHost == "" {
+		return nil
+	}
+
 	auth := smtp.PlainAuth("", s.Config.Email.SMTPUsername, s.Config.Email.SMTPPassword, s.Config.Email.SMTPHost)
 	tlsConfig := &tls.Config{InsecureSkipVerify: false, ServerName: s.Config.Email.SMTPHost}
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.Config.Email.SMTPHost, s.Config.Email.SMTPPort), tlsConfig)

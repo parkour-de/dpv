@@ -278,3 +278,79 @@ func (db *Db) SearchClubs(ctx context.Context, text string) ([]entities.Club, er
 
 	return result, nil
 }
+
+// IsCyclicSubsidiary checks if setting a parent would create a cycle.
+// It traverses INBOUND "subsidiary" edges from the child to see if the new parent is already a descendant.
+func (db *Db) IsCyclicSubsidiary(ctx context.Context, childKey, parentKey string) (bool, error) {
+	if childKey == parentKey {
+		return true, nil
+	}
+
+	query := `
+		FOR v, e, p IN 1..100 INBOUND CONCAT("clubs/", @childKey) edges
+			FILTER p.edges[*].type ALL == "subsidiary"
+			FILTER v._key == @parentKey
+			LIMIT 1
+			RETURN true
+	`
+	bindVars := map[string]interface{}{
+		"childKey":  childKey,
+		"parentKey": parentKey,
+	}
+
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return false, t.Errorf("failed to check for subsidiary cycles: %w", err)
+	}
+	defer cursor.Close()
+
+	var isCyclic bool
+	_, err = cursor.ReadDocument(ctx, &isCyclic)
+	if shared.IsNoMoreDocuments(err) {
+		return false, nil
+	} else if err != nil {
+		return false, t.Errorf("failed to read cycle check result: %w", err)
+	}
+	return isCyclic, nil
+}
+
+// SetParentClub adds or updates a subsidiary edge.
+func (db *Db) SetParentClub(ctx context.Context, childKey, parentKey string) error {
+	query := `
+		FOR e IN edges
+			FILTER e._from == @childKey AND e.type == "subsidiary"
+			REMOVE e IN edges
+	`
+	bindVars := map[string]interface{}{
+		"childKey": "clubs/" + childKey,
+	}
+	if _, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars}); err != nil {
+		return err
+	}
+
+	insertQuery := `
+		INSERT { _from: @childKey, _to: @parentKey, type: "subsidiary" } INTO edges
+	`
+	insertVars := map[string]interface{}{
+		"childKey":  "clubs/" + childKey,
+		"parentKey": "clubs/" + parentKey,
+	}
+	if _, err := db.Database.Query(ctx, insertQuery, &arangodb.QueryOptions{BindVars: insertVars}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveParentClub removes the subsidiary edge.
+func (db *Db) RemoveParentClub(ctx context.Context, childKey string) error {
+	query := `
+		FOR e IN edges
+			FILTER e._from == @childKey AND e.type == "subsidiary"
+			REMOVE e IN edges
+	`
+	bindVars := map[string]interface{}{
+		"childKey": "clubs/" + childKey,
+	}
+	_, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	return err
+}

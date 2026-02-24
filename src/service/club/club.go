@@ -101,6 +101,34 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if cp, ok := updates["contact_person"].(string); ok {
 		club.ContactPerson = cp
 	}
+	if parentKey, ok := updates["parent_key"].(string); ok {
+		if parentKey != club.ParentKey {
+			if parentKey != "" {
+				if club.Membership.Status == "active" || club.Membership.Status == "requested" {
+					return t.Errorf("a club with an active or requested membership cannot become a subsidiary")
+				}
+				_, err := s.DB.GetClubByKey(ctx, parentKey)
+				if err != nil {
+					return t.Errorf("parent club not found: %w", err)
+				}
+				isCyclic, err := s.DB.IsCyclicSubsidiary(ctx, key, parentKey)
+				if err != nil {
+					return t.Errorf("failed to validate hierarchy: %w", err)
+				}
+				if isCyclic {
+					return t.Errorf("cannot set parent club: this would create a cyclic hierarchy")
+				}
+				if err := s.DB.SetParentClub(ctx, key, parentKey); err != nil {
+					return t.Errorf("failed to set parent club edge: %w", err)
+				}
+			} else {
+				if err := s.DB.RemoveParentClub(ctx, key); err != nil {
+					return t.Errorf("failed to remove parent club edge: %w", err)
+				}
+			}
+			club.ParentKey = parentKey
+		}
+	}
 	if iban, ok := updates["iban"].(string); ok {
 		club.Membership.IBAN = iban
 	}

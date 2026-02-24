@@ -77,7 +77,8 @@ func TestServer(t *testing.T) {
 	server := setupServer(t, "8081")
 	defer server.Close()
 
-	resp, err := http.Get("http://localhost:8081/dpv/users")
+	// Change from /dpv/users to test 404 response which is JSON
+	resp, err := http.Get("http://localhost:8081/dpv/invalidroute")
 	if err != nil {
 		t.Error(err)
 	}
@@ -186,7 +187,7 @@ func TestDocumentUpload(t *testing.T) {
 	part.Write([]byte("mock pdf content"))
 	writer.Close()
 
-	uploadURL := fmt.Sprintf("http://localhost:8084/dpv/clubs/%s/documents", clubKey)
+	uploadURL := fmt.Sprintf("http://localhost:8084/dpv/club/%s/documents", clubKey)
 	req, _ = http.NewRequest("POST", uploadURL, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("X-Language", "de")

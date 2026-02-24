@@ -80,7 +80,7 @@ func TestUpdateMe(t *testing.T) {
 	userCtx := context.WithValue(ctx, "user", user)
 
 	// Success
-	err := service.UpdateMe(userCtx, "NewFirst", "", "")
+	err := service.UpdateMe(userCtx, map[string]interface{}{"firstname": "NewFirst"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -89,7 +89,7 @@ func TestUpdateMe(t *testing.T) {
 	}
 
 	// Test Update LastName
-	err = service.UpdateMe(userCtx, "", "NewLast", "")
+	err = service.UpdateMe(userCtx, map[string]interface{}{"lastname": "NewLast"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -98,13 +98,13 @@ func TestUpdateMe(t *testing.T) {
 	}
 
 	// Test No Update
-	err = service.UpdateMe(userCtx, "", "", "")
+	err = service.UpdateMe(userCtx, map[string]interface{}{})
 	if err == nil || err.Error() != "no fields to update" {
 		t.Errorf("Expected 'no fields to update' error, got '%v'", err)
 	}
 
 	// User not in context
-	err = service.UpdateMe(ctx, "New", "Name", "")
+	err = service.UpdateMe(ctx, map[string]interface{}{"firstname": "NewName"})
 	if err == nil || err.Error() != "user not found in context" {
 		t.Errorf("Expected 'user not found in context' error, got '%v'", err)
 	}

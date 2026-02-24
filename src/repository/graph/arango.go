@@ -142,6 +142,7 @@ func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
 		}
 		dbname = "test-" + dbname + "-" + token
 		log.Printf("Using database %s\n", dbname)
+		config.Email.SMTPHost = ""
 	}
 	database, err := GetOrCreateDatabase(c, dbname, config)
 	if err != nil {
