@@ -83,6 +83,7 @@ func NewServer(configPath string, test bool) *http.Server {
 
 	r.GET("/dpv/users", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.List, db)))
 	r.GET("/dpv/user/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Get, db)))
+	r.GET("/dpv/user/:key/payment-details", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.GetPaymentDetailsAdmin, db)))
 	r.POST("/dpv/user/:key/approve", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Approve, db)))
 	r.POST("/dpv/user/:key/deny", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Deny, db)))
 	r.POST("/dpv/user/:key/cancel", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Cancel, db)))
