@@ -418,6 +418,7 @@ func filteredResponse(userEntity *entities.User) *entities.User {
 			EndDate:      userEntity.Membership.EndDate,
 		},
 		Language: userEntity.Language,
+		YourClub: userEntity.YourClub,
 	}
 	return resp
 }

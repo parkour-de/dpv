@@ -50,6 +50,9 @@ securitySchemes:
           properties:
             lastname: string
             firstname: string
+            language?: string
+            your_club?: string
+            address?: string
       responses:
         200:
           description: Updated user details
@@ -65,6 +68,10 @@ securitySchemes:
             type: object
             properties:
               begin_date?: integer
+              consent_privacy?: boolean
+              consent_accuracy?: boolean
+              consent_statutes?: boolean
+              consent_finances?: boolean
         responses:
           200:
             description: Application submitted
@@ -450,6 +457,11 @@ securitySchemes:
                 type: integer
                 required: false
                 description: Desired start date (Unix timestamp)
+                required: false
+              consent_privacy?: boolean
+              consent_accuracy?: boolean
+              consent_statutes?: boolean
+              consent_finances?: boolean
         responses:
           200:
             description: Application submitted
