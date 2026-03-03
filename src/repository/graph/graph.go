@@ -14,6 +14,7 @@ type Db struct {
 	Clubs    EntityManager[*entities.Club]
 	Edges    arangodb.Collection
 	Censuses EntityManager[*entities.Census]
+	Configs  EntityManager[*entities.Config]
 }
 
 func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
@@ -30,6 +31,10 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 		return nil, t.Errorf("could not get or create edges collection: %w", err)
 	}
 	censuses, err := NewEntityManager[*entities.Census](database, "censuses", false, func() *entities.Census { return new(entities.Census) })
+	if err != nil {
+		return nil, err
+	}
+	configs, err := NewEntityManager[*entities.Config](database, "configs", false, func() *entities.Config { return new(entities.Config) })
 	if err != nil {
 		return nil, err
 	}
@@ -56,5 +61,6 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 		clubs,
 		edges,
 		censuses,
+		configs,
 	}, nil
 }

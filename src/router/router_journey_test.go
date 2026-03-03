@@ -88,7 +88,7 @@ func TestUserMembershipJourney(t *testing.T) {
 	// Let's just test `users/me/cancel` and `users/me/apply` directly because they only require BasicAuth!
 
 	// User Applies
-	req, _ := http.NewRequest("POST", "http://localhost:8086/dpv/users/me/apply", strings.NewReader(`{"begin_date": 1000}`))
+	req, _ := http.NewRequest("POST", "http://localhost:8086/dpv/users/me/apply", strings.NewReader(`{"consent_privacy":true,"consent_accuracy":true,"consent_statutes":true,"consent_finances":true}`))
 	req.SetBasicAuth("member@journey.local", "UserPass123!")
 	res, _ := client.Do(req)
 	if res.StatusCode != http.StatusOK {

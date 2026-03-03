@@ -90,6 +90,11 @@ func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) 
 		updated = true
 	}
 
+	if yc, ok := updates["your_club"].(string); ok {
+		user.YourClub = yc
+		updated = true
+	}
+
 	if address, ok := updates["address"].(string); ok {
 		user.Membership.Address = address
 		updated = true

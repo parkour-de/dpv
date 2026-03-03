@@ -12,6 +12,7 @@ type User struct {
 	EmailVerified *time.Time `json:"email_verified,omitempty"`
 	Membership    Membership `json:"membership"`
 	Language      string     `json:"language"`
+	YourClub      string     `json:"your_club,omitempty"`
 }
 
 func (u *User) GetMembership() *Membership {

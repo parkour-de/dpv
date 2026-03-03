@@ -2,8 +2,11 @@ package user
 
 import (
 	"context"
+	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/t"
+	"dpv/dpv/src/service/email"
 	"dpv/dpv/src/service/membership"
+	"fmt"
 )
 
 func (s *Service) Apply(ctx context.Context, key string, beginDate int64) error {
@@ -19,6 +22,11 @@ func (s *Service) Apply(ctx context.Context, key string, beginDate int64) error 
 	if err := s.DB.Users.Update(user, ctx); err != nil {
 		return t.Errorf("failed to update user for membership application: %w", err)
 	}
+
+	emailService := email.NewService(dpv.ConfigInstance)
+	_ = emailService.SendApplicationReceiptEmail(user, nil)
+	_ = emailService.SendApplicationNoticeEmail(user, nil)
+
 	return nil
 }
 
@@ -31,6 +39,16 @@ func (s *Service) Approve(ctx context.Context, key string, beginDate int64) erro
 	if err := membership.Approve(ctx, user, beginDate); err != nil {
 		return err
 	}
+
+	if user.Membership.MembershipNumber == "" {
+		seq, err := s.DB.GetNextSequence(ctx, "A")
+		if err != nil {
+			return t.Errorf("failed to generate membership number: %w", err)
+		}
+		user.Membership.MembershipNumber = fmt.Sprintf("A-%03d-%03d", seq/1000, seq%1000)
+	}
+
+	user.Membership.CurrentFee = 10.0
 
 	if err := s.DB.Users.Update(user, ctx); err != nil {
 		return t.Errorf("failed to update user for membership approval: %w", err)

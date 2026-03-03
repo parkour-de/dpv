@@ -3,8 +3,11 @@ package club
 import (
 	"context"
 	"dpv/dpv/src/domain/entities"
+	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/t"
+	"dpv/dpv/src/service/email"
 	"dpv/dpv/src/service/membership"
+	"fmt"
 )
 
 // Apply marks a club's membership as requested.
@@ -39,6 +42,11 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club for membership application: %w", err)
 	}
+
+	emailService := email.NewService(dpv.ConfigInstance)
+	_ = emailService.SendApplicationReceiptEmail(user, club)
+	_ = emailService.SendApplicationNoticeEmail(user, club)
+
 	return nil
 }
 
@@ -52,6 +60,21 @@ func (s *Service) Approve(ctx context.Context, key string, beginDate int64) erro
 	if err := membership.Approve(ctx, club, beginDate); err != nil {
 		return err
 	}
+
+	if club.Membership.MembershipNumber == "" {
+		seq, err := s.DB.GetNextSequence(ctx, "V")
+		if err != nil {
+			return t.Errorf("failed to generate membership number: %w", err)
+		}
+		club.Membership.MembershipNumber = fmt.Sprintf("V-%03d-%03d", seq/1000, seq%1000)
+	}
+
+	club.Membership.CurrentFee = float64(club.Members) * 1.0
+	votes := (club.Members / 100) + 1
+	if votes > 5 {
+		votes = 5
+	}
+	club.Membership.CurrentVotes = votes
 
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club for membership approval: %w", err)

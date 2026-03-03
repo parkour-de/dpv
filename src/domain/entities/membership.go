@@ -9,6 +9,9 @@ type Membership struct {
 	Address           string  `json:"address,omitempty"`
 	BeginDate         int64   `json:"begin_date"` // unix seconds
 	EndDate           int64   `json:"end_date"`   // unix seconds
+	MembershipNumber  string  `json:"membership_number,omitempty"`
+	CurrentFee        float64 `json:"current_fee,omitempty"`
+	CurrentVotes      int     `json:"current_votes,omitempty"`
 }
 
 type MembershipProvider interface {

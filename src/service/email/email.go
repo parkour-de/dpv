@@ -203,8 +203,51 @@ Viel Erfolg bei Ihrer Vereinsarbeit!
 	return s.sendGenericEmail(user.Email, subject, textBody, htmlBody)
 }
 
+// SendApplicationReceiptEmail sends an application receipt confirmation to the applicant
+func (s *Service) SendApplicationReceiptEmail(user *entities.User, club *entities.Club) error {
+	var subject, textBody, htmlBody string
+
+	if club != nil {
+		subject = "Eingang Ihres Mitgliedsantrags für " + club.Name
+		textBody = fmt.Sprintf("Hallo %s %s,\n\nvielen Dank für den Mitgliedsantrag für Ihren Verein %s.\nWir werden diesen in Kürze prüfen und uns bei Ihnen melden.\n\n© %d Deutscher Parkour Verband",
+			user.FirstName, user.LastName, club.Name, time.Now().Year())
+		htmlBody = fmt.Sprintf("<html><body><p>Hallo %s %s,</p><p>vielen Dank für den Mitgliedsantrag für Ihren Verein <strong>%s</strong>.</p><p>Wir werden diesen in Kürze prüfen und uns bei Ihnen melden.</p><p>© %d Deutscher Parkour Verband</p></body></html>",
+			user.FirstName, user.LastName, club.Name, time.Now().Year())
+	} else {
+		subject = "Eingang Ihres Mitgliedsantrags"
+		textBody = fmt.Sprintf("Hallo %s %s,\n\nvielen Dank für Ihren Mitgliedsantrag als Aktivmitglied.\nWir werden diesen in Kürze prüfen und uns bei Ihnen melden.\n\n© %d Deutscher Parkour Verband",
+			user.FirstName, user.LastName, time.Now().Year())
+		htmlBody = fmt.Sprintf("<html><body><p>Hallo %s %s,</p><p>vielen Dank für Ihren Mitgliedsantrag als Aktivmitglied.</p><p>Wir werden diesen in Kürze prüfen und uns bei Ihnen melden.</p><p>© %d Deutscher Parkour Verband</p></body></html>",
+			user.FirstName, user.LastName, time.Now().Year())
+	}
+
+	return s.sendGenericEmail(user.Email, subject, textBody, htmlBody)
+}
+
+// SendApplicationNoticeEmail sends a notice email to the DPV board
+func (s *Service) SendApplicationNoticeEmail(user *entities.User, club *entities.Club) error {
+	var subject, textBody, htmlBody string
+	to := "info@parkour-deutschland.de"
+
+	if club != nil {
+		subject = "Neuer Mitgliedsantrag: " + club.Name
+		textBody = fmt.Sprintf("Hallo,\n\nes liegt ein neuer Mitgliedsantrag für den Verein %s von %s %s vor.\nBitte in der Verwaltungsoberfläche prüfen.",
+			club.Name, user.FirstName, user.LastName)
+		htmlBody = fmt.Sprintf("<html><body><p>Hallo,</p><p>es liegt ein neuer Mitgliedsantrag für den Verein <strong>%s</strong> von <strong>%s %s</strong> vor.</p><p>Bitte in der Verwaltungsoberfläche prüfen.</p></body></html>",
+			club.Name, user.FirstName, user.LastName)
+	} else {
+		subject = "Neuer Mitgliedsantrag: Aktivmitglied"
+		textBody = fmt.Sprintf("Hallo,\n\nes liegt ein neuer Mitgliedsantrag als Aktivmitglied von %s %s vor.\nBitte in der Verwaltungsoberfläche prüfen.",
+			user.FirstName, user.LastName)
+		htmlBody = fmt.Sprintf("<html><body><p>Hallo,</p><p>es liegt ein neuer Mitgliedsantrag als Aktivmitglied von <strong>%s %s</strong> vor.</p><p>Bitte in der Verwaltungsoberfläche prüfen.</p></body></html>",
+			user.FirstName, user.LastName)
+	}
+
+	return s.sendGenericEmail(to, subject, textBody, htmlBody)
+}
+
 func (s *Service) sendGenericEmail(to, subject, textBody, htmlBody string) error {
-	if s.Config.Email.SMTPHost == "" {
+	if s.Config == nil || s.Config.Email.SMTPHost == "" {
 		return nil
 	}
 
