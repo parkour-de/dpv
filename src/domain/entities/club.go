@@ -1,6 +1,9 @@
 package entities
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Club struct {
 	Entity
@@ -33,4 +36,32 @@ type CensusSummary struct {
 
 func (c *Club) GetMembership() *Membership {
 	return &c.Membership
+}
+
+func (c Club) GetCSVHeaders() []string {
+	return []string{"ID", "Typ", "Name", "Email", "Status", "Mitgliedsform", "Nummer", "Beitrag"}
+}
+
+func (c Club) ToCSV() []string {
+	memType := c.Membership.Type
+	if memType == "" {
+		memType = "ordinary"
+	}
+
+	fee := fmt.Sprintf("%.2f", c.Membership.CurrentFee)
+	email := c.Email
+	if email == "" {
+		email = "No Email"
+	}
+
+	return []string{
+		c.Key,
+		"Club",
+		c.Name,
+		email,
+		c.Membership.Status,
+		memType,
+		c.Membership.MembershipNumber,
+		fee,
+	}
 }

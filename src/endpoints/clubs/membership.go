@@ -18,8 +18,8 @@ func (h *ClubHandler) Apply(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 
 	key := ps.ByName("key")
-	membership.HandleApply(w, r, func(ctx context.Context, beginDate int64) error {
-		return h.Service.Apply(ctx, key, user, beginDate)
+	membership.HandleApply(w, r, func(ctx context.Context, beginDate int64, memType string, fee float64) error {
+		return h.Service.Apply(ctx, key, user, beginDate, memType, fee)
 	})
 }
 

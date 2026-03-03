@@ -11,7 +11,7 @@ import (
 )
 
 // Apply marks a club's membership as requested.
-func (s *Service) Apply(ctx context.Context, key string, user *entities.User, beginDate int64) error {
+func (s *Service) Apply(ctx context.Context, key string, user *entities.User, beginDate int64, memType string, fee float64) error {
 	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return t.Errorf("failed to load club for membership application: %w", err)
@@ -35,7 +35,10 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 		return nil
 	}
 
-	if err := membership.Apply(ctx, club, beginDate, validateFn); err != nil {
+	if memType == "" {
+		memType = "ordinary"
+	}
+	if err := membership.Apply(ctx, club, beginDate, memType, fee, validateFn); err != nil {
 		return err
 	}
 

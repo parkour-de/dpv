@@ -68,6 +68,8 @@ securitySchemes:
             type: object
             properties:
               begin_date?: integer
+              type?: string
+              fee?: number
               consent_privacy?: boolean
               consent_accuracy?: boolean
               consent_statutes?: boolean
@@ -273,6 +275,8 @@ securitySchemes:
         body:
           application/json:
             type: User[]
+          text/csv:
+            description: CSV representation of users
 
 /user/{key}:
   securedBy: [ basicAuth ]
@@ -350,6 +354,8 @@ securitySchemes:
         body:
           application/json:
             type: Club[]
+          text/csv:
+            description: CSV representation of clubs
   post:
     description: Create a new club
     body:
@@ -457,7 +463,8 @@ securitySchemes:
                 type: integer
                 required: false
                 description: Desired start date (Unix timestamp)
-                required: false
+              type?: string
+              fee?: number
               consent_privacy?: boolean
               consent_accuracy?: boolean
               consent_statutes?: boolean
@@ -611,6 +618,31 @@ securitySchemes:
         description: CSV sample
         body:
           text/csv:
+
+/admin/audit:
+  securedBy: [ basicAuth ]
+  get:
+    description: Get a list of recent audit log entries (Admin only)
+    queryParameters:
+      user?:
+        type: string
+        description: Filter by user making the action
+      target?:
+        type: string
+        description: Filter by generic target
+      action?:
+        type: string
+        description: Filter by specific action type
+      limit?:
+        type: integer
+        default: 100
+        description: Limit number of results
+    responses:
+      200:
+        description: Successful retrieval of audit logs
+        body:
+          application/json:
+            type: array
 
 /version:
   get:

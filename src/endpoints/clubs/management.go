@@ -58,5 +58,10 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 		resp = append(resp, *FilteredResponse(&c, isAdmin))
 	}
 
+	if r.Header.Get("Accept") == "text/csv" {
+		api.SuccessCSV(w, r, "clubs_export.csv", clubs)
+		return
+	}
+
 	api.SuccessJson(w, r, resp)
 }

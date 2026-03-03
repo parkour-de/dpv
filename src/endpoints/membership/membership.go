@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
-func HandleApply(w http.ResponseWriter, r *http.Request, applyFn func(ctx context.Context, beginDate int64) error) {
+func HandleApply(w http.ResponseWriter, r *http.Request, applyFn func(ctx context.Context, beginDate int64, memType string, fee float64) error) {
 	var req struct {
-		ConsentPrivacy  bool `json:"consent_privacy"`
-		ConsentAccuracy bool `json:"consent_accuracy"`
-		ConsentStatutes bool `json:"consent_statutes"`
-		ConsentFinances bool `json:"consent_finances"`
+		ConsentPrivacy  bool    `json:"consent_privacy"`
+		ConsentAccuracy bool    `json:"consent_accuracy"`
+		ConsentStatutes bool    `json:"consent_statutes"`
+		ConsentFinances bool    `json:"consent_finances"`
+		Type            string  `json:"type"`
+		Fee             float64 `json:"fee"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
 		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
@@ -30,7 +32,7 @@ func HandleApply(w http.ResponseWriter, r *http.Request, applyFn func(ctx contex
 
 	beginDate := time.Now().Unix()
 
-	if err := applyFn(r.Context(), beginDate); err != nil {
+	if err := applyFn(r.Context(), beginDate, req.Type, req.Fee); err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
 	}

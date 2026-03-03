@@ -19,6 +19,7 @@ type Config struct {
 		Port int    `yaml:"port"`
 		User string `yaml:"user"`
 		Pass string `yaml:"pass"`
+		Name string `yaml:"name"`
 	} `yaml:"db"`
 	Auth struct {
 		DpvSecretKey    string `yaml:"dpv_secret_key"`

@@ -1,6 +1,9 @@
 package entities
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type User struct {
 	Entity
@@ -17,4 +20,29 @@ type User struct {
 
 func (u *User) GetMembership() *Membership {
 	return &u.Membership
+}
+
+func (u User) GetCSVHeaders() []string {
+	return []string{"ID", "Typ", "Name", "Email", "Status", "Mitgliedsform", "Nummer", "Beitrag"}
+}
+
+func (u User) ToCSV() []string {
+	name := fmt.Sprintf("%s %s", u.FirstName, u.LastName)
+	memType := u.Membership.Type
+	if memType == "" {
+		memType = "active"
+	}
+
+	fee := fmt.Sprintf("%.2f", u.Membership.CurrentFee)
+
+	return []string{
+		u.Key,
+		"Person",
+		name,
+		u.Email,
+		u.Membership.Status,
+		memType,
+		u.Membership.MembershipNumber,
+		fee,
+	}
 }

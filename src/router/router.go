@@ -2,6 +2,7 @@ package router
 
 import (
 	"dpv/dpv/src/api"
+	"dpv/dpv/src/endpoints/audit"
 	censusEndpoints "dpv/dpv/src/endpoints/census"
 	"dpv/dpv/src/endpoints/clubs"
 	"dpv/dpv/src/endpoints/users"
@@ -54,6 +55,8 @@ func NewServer(configPath string, test bool) *http.Server {
 	censusService := census.NewService(db)
 	censusHandler := censusEndpoints.NewHandler(censusService)
 
+	auditHandler := audit.NewHandler(db)
+
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
 			header := w.Header()
@@ -80,6 +83,8 @@ func NewServer(configPath string, test bool) *http.Server {
 
 	r.POST("/dpv/users/me/apply", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Apply, db)))
 	r.POST("/dpv/users/me/cancel", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.CancelMe, db)))
+
+	r.GET("/dpv/audit", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(auditHandler.Get, db)))
 
 	r.GET("/dpv/users", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.List, db)))
 	r.GET("/dpv/user/:key", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Get, db)))

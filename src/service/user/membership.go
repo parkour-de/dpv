@@ -9,13 +9,13 @@ import (
 	"fmt"
 )
 
-func (s *Service) Apply(ctx context.Context, key string, beginDate int64) error {
+func (s *Service) Apply(ctx context.Context, key string, beginDate int64, memType string, fee float64) error {
 	user, err := s.DB.Users.Read(key, ctx)
 	if err != nil {
 		return t.Errorf("failed to load user for membership application: %w", err)
 	}
 
-	if err := membership.Apply(ctx, user, beginDate, nil); err != nil {
+	if err := membership.Apply(ctx, user, beginDate, memType, fee, nil); err != nil {
 		return err
 	}
 
@@ -40,15 +40,25 @@ func (s *Service) Approve(ctx context.Context, key string, beginDate int64) erro
 		return err
 	}
 
-	if user.Membership.MembershipNumber == "" {
-		seq, err := s.DB.GetNextSequence(ctx, "A")
-		if err != nil {
-			return t.Errorf("failed to generate membership number: %w", err)
+	if user.Membership.Type == "supporting" {
+		if user.Membership.MembershipNumber == "" {
+			seq, err := s.DB.GetNextSequence(ctx, "F")
+			if err != nil {
+				return t.Errorf("failed to generate membership number: %w", err)
+			}
+			user.Membership.MembershipNumber = fmt.Sprintf("F-%03d-%03d", seq/1000, seq%1000)
 		}
-		user.Membership.MembershipNumber = fmt.Sprintf("A-%03d-%03d", seq/1000, seq%1000)
+		user.Membership.CurrentFee = user.Membership.Contribution
+	} else {
+		if user.Membership.MembershipNumber == "" {
+			seq, err := s.DB.GetNextSequence(ctx, "A")
+			if err != nil {
+				return t.Errorf("failed to generate membership number: %w", err)
+			}
+			user.Membership.MembershipNumber = fmt.Sprintf("A-%03d-%03d", seq/1000, seq%1000)
+		}
+		user.Membership.CurrentFee = 10.0
 	}
-
-	user.Membership.CurrentFee = 10.0
 
 	if err := s.DB.Users.Update(user, ctx); err != nil {
 		return t.Errorf("failed to update user for membership approval: %w", err)

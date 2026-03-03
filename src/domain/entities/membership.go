@@ -4,6 +4,7 @@ type Membership struct {
 	IBAN              string  `json:"iban,omitempty"`
 	AccountHolder     string  `json:"account_holder,omitempty"`
 	SEPAMandateNumber string  `json:"sepa_mandate_number,omitempty"`
+	Type              string  `json:"type,omitempty"` // active, supporting, ordinary
 	Contribution      float64 `json:"contribution"`
 	Status            string  `json:"status"` // inactive, requested, active, denied, cancelled
 	Address           string  `json:"address,omitempty"`

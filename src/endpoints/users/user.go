@@ -127,6 +127,12 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 	if resp == nil {
 		resp = make([]*entities.User, 0)
 	}
+
+	if r.Header.Get("Accept") == "text/csv" {
+		api.SuccessCSV(w, r, "users_export.csv", users)
+		return
+	}
+
 	api.SuccessJson(w, r, resp)
 }
 

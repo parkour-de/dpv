@@ -1,4 +1,5 @@
 db:
+  name: dpv
   host: localhost
   root: change-me-together-thick-music-moon
   port: 8529

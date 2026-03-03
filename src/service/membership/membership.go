@@ -9,7 +9,7 @@ import (
 
 // Apply marks a membership as requested.
 // Optional validateFn can be provided to enforce specific rules (e.g. subsidiary checks).
-func Apply(ctx context.Context, provider entities.MembershipProvider, beginDate int64, validateFn func() error) error {
+func Apply(ctx context.Context, provider entities.MembershipProvider, beginDate int64, memType string, fee float64, validateFn func() error) error {
 	if validateFn != nil {
 		if err := validateFn(); err != nil {
 			return err
@@ -25,6 +25,12 @@ func Apply(ctx context.Context, provider entities.MembershipProvider, beginDate 
 	}
 
 	m.Status = "requested"
+	if memType != "" {
+		m.Type = memType
+	} else {
+		m.Type = "active" // Default
+	}
+	m.Contribution = fee
 	m.EndDate = 0
 	m.BeginDate = 0
 	if beginDate > 0 {

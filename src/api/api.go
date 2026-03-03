@@ -5,6 +5,7 @@ import (
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/security"
 	"dpv/dpv/src/repository/t"
+	"encoding/csv"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -76,6 +77,34 @@ func SuccessJson(w http.ResponseWriter, r *http.Request, data interface{}) {
 		w.Header().Set("Content-Type", "application/json")
 		Success(w, r, jsonMsg)
 	}
+}
+
+type CSVRecord interface {
+	GetCSVHeaders() []string
+	ToCSV() []string
+}
+
+func SuccessCSV[T CSVRecord](w http.ResponseWriter, r *http.Request, filename string, records []T) {
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment;filename="+filename)
+
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+
+	if len(records) > 0 {
+		_ = writer.Write(records[0].GetCSVHeaders())
+	}
+
+	for _, record := range records {
+		_ = writer.Write(record.ToCSV())
+	}
+
+	log.Printf(
+		"%s %s %s 200",
+		r.Method,
+		r.RequestURI,
+		r.RemoteAddr,
+	)
 }
 
 func Success(w http.ResponseWriter, r *http.Request, jsonMsg []byte) {

@@ -22,7 +22,7 @@ func TestUserMembershipLifecycle(t *testing.T) {
 	}
 
 	// 2. Apply
-	err = service.Apply(ctx, user.Key, 1000)
+	err = service.Apply(ctx, user.Key, 1000, "active", 10.0)
 	if err != nil {
 		t.Fatalf("expected successful Apply, got %v", err)
 	}
@@ -52,7 +52,7 @@ func TestUserMembershipLifecycle(t *testing.T) {
 	}
 
 	// 5. Re-apply
-	err = service.Apply(ctx, user.Key, 4000)
+	err = service.Apply(ctx, user.Key, 4000, "active", 10.0)
 	if err != nil {
 		t.Fatalf("expected successful Apply from cancelled, got %v", err)
 	}

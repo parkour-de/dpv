@@ -4,6 +4,7 @@ import (
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/t"
+	"path/filepath"
 
 	"github.com/arangodb/go-driver/v2/arangodb"
 )
@@ -15,14 +16,17 @@ type Db struct {
 	Edges    arangodb.Collection
 	Censuses EntityManager[*entities.Census]
 	Configs  EntityManager[*entities.Config]
+	Audit    *AuditLogger
 }
 
 func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
-	users, err := NewEntityManager[*entities.User](database, "users", false, func() *entities.User { return new(entities.User) })
+	audit := *NewAuditLogger(filepath.Join(config.Storage.DocumentPath, "audit.jsonl"))
+
+	users, err := NewEntityManager[*entities.User](database, "users", false, func() *entities.User { return new(entities.User) }, &audit)
 	if err != nil {
 		return nil, err
 	}
-	clubs, err := NewEntityManager[*entities.Club](database, "clubs", false, func() *entities.Club { return new(entities.Club) })
+	clubs, err := NewEntityManager[*entities.Club](database, "clubs", false, func() *entities.Club { return new(entities.Club) }, &audit)
 	if err != nil {
 		return nil, err
 	}
@@ -30,11 +34,11 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 	if err != nil {
 		return nil, t.Errorf("could not get or create edges collection: %w", err)
 	}
-	censuses, err := NewEntityManager[*entities.Census](database, "censuses", false, func() *entities.Census { return new(entities.Census) })
+	censuses, err := NewEntityManager[*entities.Census](database, "censuses", false, func() *entities.Census { return new(entities.Census) }, &audit)
 	if err != nil {
 		return nil, err
 	}
-	configs, err := NewEntityManager[*entities.Config](database, "configs", false, func() *entities.Config { return new(entities.Config) })
+	configs, err := NewEntityManager[*entities.Config](database, "configs", false, func() *entities.Config { return new(entities.Config) }, &audit)
 	if err != nil {
 		return nil, err
 	}
@@ -62,5 +66,6 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 		edges,
 		censuses,
 		configs,
+		&audit,
 	}, nil
 }

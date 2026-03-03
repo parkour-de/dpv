@@ -113,12 +113,17 @@ func GetOrCreateView(db arangodb.Database, name string, properties *arangodb.Ara
 
 var fields map[string]arangodb.ArangoSearchElementProperties
 
-func NewEntityManager[T Entity](db arangodb.Database, name string, edges bool, constructor func() T) (EntityManager[T], error) {
+func NewEntityManager[T Entity](db arangodb.Database, name string, edges bool, constructor func() T, audit *AuditLogger) (EntityManager[T], error) {
 	collection, err := GetOrCreateCollection(db, name, edges)
 	if err != nil {
 		return EntityManager[T]{}, t.Errorf("could not get or create %s collection: %w", name, err)
 	}
-	return EntityManager[T]{collection, constructor}, nil
+	return EntityManager[T]{
+		Collection:  collection,
+		Constructor: constructor,
+		Audit:       audit,
+		Type:        name,
+	}, nil
 }
 
 func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
@@ -134,7 +139,10 @@ func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
 	if err != nil {
 		return nil, nil, t.Errorf("could not connect to database server: %w", err)
 	}
-	dbname := "dpv"
+	dbname := config.DB.Name
+	if dbname == "" {
+		dbname = "dpv"
+	}
 	if test {
 		token, err := security.MakeNonce()
 		if err != nil {

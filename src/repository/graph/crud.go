@@ -10,6 +10,8 @@ import (
 type EntityManager[T Entity] struct {
 	Collection  arangodb.Collection
 	Constructor func() T
+	Audit       *AuditLogger
+	Type        string
 }
 
 type Entity interface {
@@ -23,6 +25,9 @@ func (im *EntityManager[T]) Create(item T, ctx context.Context) error {
 		return t.Errorf("could not create item: %w", err)
 	}
 	item.SetKey(meta.Key)
+	if im.Audit != nil {
+		im.Audit.Log(ctx, ActionCreate, im.Type, meta.Key, item)
+	}
 	return nil
 }
 
@@ -49,6 +54,9 @@ func (im *EntityManager[T]) Update(item T, ctx context.Context) error {
 	if err != nil {
 		return t.Errorf("could not update item with key %v: %w", item.GetKey(), err)
 	}
+	if im.Audit != nil {
+		im.Audit.Log(ctx, ActionUpdate, im.Type, item.GetKey(), item)
+	}
 	return nil
 }
 
@@ -56,6 +64,9 @@ func (im *EntityManager[T]) Delete(item T, ctx context.Context) error {
 	_, err := im.Collection.DeleteDocument(ctx, item.GetKey())
 	if err != nil {
 		return t.Errorf("could not delete item with key %v: %w", item.GetKey(), err)
+	}
+	if im.Audit != nil {
+		im.Audit.Log(ctx, ActionDelete, im.Type, item.GetKey(), nil)
 	}
 	return nil
 }
