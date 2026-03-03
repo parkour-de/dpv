@@ -21,10 +21,13 @@ func NewHandler(service *club.Service) *ClubHandler {
 }
 
 type CreateClubRequest struct {
-	Name      string `json:"name"`
-	LegalForm string `json:"legal_form"`
-	Email     string `json:"email,omitempty"`
-	Address   string `json:"address,omitempty"`
+	Name              string `json:"name"`
+	LegalForm         string `json:"legal_form"`
+	Email             string `json:"email,omitempty"`
+	Address           string `json:"address,omitempty"`
+	State             string `json:"state,omitempty"`
+	RegisterNumber    string `json:"registerNumber,omitempty"`
+	ExemptionValidity string `json:"exemptionValidity,omitempty"`
 }
 
 func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -44,10 +47,16 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 	req.LegalForm = strings.TrimSpace(req.LegalForm)
 	req.Email = strings.TrimSpace(req.Email)
 	req.Address = strings.TrimSpace(req.Address)
+	req.State = strings.TrimSpace(req.State)
+	req.RegisterNumber = strings.TrimSpace(req.RegisterNumber)
+	req.ExemptionValidity = strings.TrimSpace(req.ExemptionValidity)
 
 	clubEntity := &entities.Club{
-		Name:      req.Name,
-		LegalForm: req.LegalForm,
+		Name:              req.Name,
+		LegalForm:         req.LegalForm,
+		State:             req.State,
+		RegisterNumber:    req.RegisterNumber,
+		ExemptionValidity: req.ExemptionValidity,
 		Membership: entities.Membership{
 			Address: req.Address,
 		},
@@ -137,8 +146,11 @@ func FilteredResponse(clubEntity *entities.Club, isAdmin bool) *entities.Club {
 			Created:  clubEntity.Created,
 			Modified: clubEntity.Modified,
 		},
-		Name:      clubEntity.Name,
-		LegalForm: clubEntity.LegalForm,
+		Name:              clubEntity.Name,
+		LegalForm:         clubEntity.LegalForm,
+		State:             clubEntity.State,
+		RegisterNumber:    clubEntity.RegisterNumber,
+		ExemptionValidity: clubEntity.ExemptionValidity,
 		Membership: entities.Membership{
 			Status:       clubEntity.Membership.Status,
 			Contribution: clubEntity.Membership.Contribution,
@@ -182,7 +194,8 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 
 	key := ps.ByName("key")
 	var req struct {
-		Email string `json:"email"`
+		Email                    string `json:"email"`
+		AuthorizedRepresentative bool   `json:"authorizedRepresentative"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
@@ -194,7 +207,7 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	err = h.Service.AddOwner(r.Context(), key, req.Email, user)
+	err = h.Service.AddOwner(r.Context(), key, req.Email, req.AuthorizedRepresentative, user)
 	if err != nil {
 		api.Error(w, r, t.Errorf("could not add owner: %w", err), http.StatusBadRequest)
 		return

@@ -555,6 +555,9 @@ securitySchemes:
             type: object
             properties:
               email: string
+              authorizedRepresentative:
+                type: boolean
+                required: false
         responses:
           200:
             description: Owner added

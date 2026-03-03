@@ -80,7 +80,7 @@ func (db *Db) GetClubByKey(ctx context.Context, key string) (*entities.Club, err
 		LET vorstand = (
 			FOR v, e IN 1..1 INBOUND CONCAT("clubs/", @key) edges
 				FILTER e.type == "authorizes" AND e.role == "vorstand"
-				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname, email: v.email}
+				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname, email: v.email, authorizedRepresentative: e.authorizedRepresentative}
 		)
 		LET census = (
 			FOR v, e IN 1..1 OUTBOUND CONCAT("clubs/", @key) edges
@@ -181,18 +181,19 @@ func buildClubQuery(options ClubQueryOptions) (string, map[string]interface{}) {
 }
 
 // AddVorstand adds a user as a board member (owner) of the club.
-func (db *Db) AddVorstand(ctx context.Context, clubKey, userKey string) error {
+func (db *Db) AddVorstand(ctx context.Context, clubKey, userKey string, authorizedRepresentative bool) error {
 	// Check if edge already exists to avoid duplicates? ArangoDB might handle or we can check.
 	// But let's just try to create. If distinct edges are enforced, it might fail.
 	// Simpler is to use AQL UPSERT or check existence.
 	query := `
 		UPSERT { _from: @userKey, _to: @clubKey, type: "authorizes", role: "vorstand" }
-		INSERT { _from: @userKey, _to: @clubKey, type: "authorizes", role: "vorstand" }
-		UPDATE {} IN edges
+		INSERT { _from: @userKey, _to: @clubKey, type: "authorizes", role: "vorstand", authorizedRepresentative: @authorizedRepresentative }
+		UPDATE { authorizedRepresentative: @authorizedRepresentative } IN edges
 	`
 	bindVars := map[string]interface{}{
-		"userKey": "users/" + userKey,
-		"clubKey": "clubs/" + clubKey,
+		"userKey":                  "users/" + userKey,
+		"clubKey":                  "clubs/" + clubKey,
+		"authorizedRepresentative": authorizedRepresentative,
 	}
 	_, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
 	if err != nil {

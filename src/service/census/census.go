@@ -79,11 +79,18 @@ func (s *Service) ParseAndValidateCSV(reader io.Reader, year int) (*entities.Cen
 	// Heuristic: skip first line if the birth year column is not a number.
 	startIndex := 0
 	if len(records[0]) == 4 {
-		if _, err := strconv.Atoi(strings.TrimSpace(records[0][2])); err != nil {
+		val := strings.TrimSpace(records[0][2])
+		valLower := strings.ToLower(val)
+		if strings.Contains(valLower, "birth") || strings.Contains(valLower, "geburt") {
 			startIndex = 1
+		} else {
+			isDate := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$|^\d{2}\.\d{2}\.\d{4}$|^\d{4}$`).MatchString(val)
+			if !isDate {
+				startIndex = 1
+			}
 		}
 	} else {
-		return nil, t.Errorf("CSV must have exactly 4 columns: Firstname, Lastname, Birthyear, Gender")
+		return nil, t.Errorf("CSV must have exactly 4 columns: Firstname, Lastname, Birthdate, Gender")
 	}
 
 	var members []entities.MemberRow
@@ -102,7 +109,7 @@ func (s *Service) ParseAndValidateCSV(reader io.Reader, year int) (*entities.Cen
 
 		firstname := strings.TrimSpace(row[0])
 		lastname := strings.TrimSpace(row[1])
-		birthYearStr := strings.TrimSpace(row[2])
+		birthDateStr := strings.TrimSpace(row[2])
 		gender := strings.TrimSpace(row[3])
 
 		// Names and Gender must not be purely numeric
@@ -116,9 +123,23 @@ func (s *Service) ParseAndValidateCSV(reader io.Reader, year int) (*entities.Cen
 			return nil, t.Errorf("line %d: Gender contains only numbers", lineNum)
 		}
 
-		birthYear, err := strconv.Atoi(birthYearStr)
-		if err != nil {
-			return nil, t.Errorf("line %d: invalid birth year '%s'", lineNum, birthYearStr)
+		var birthYear int
+		if len(birthDateStr) >= 4 {
+			if strings.Contains(birthDateStr, "-") {
+				parts := strings.Split(birthDateStr, "-")
+				birthYear, _ = strconv.Atoi(parts[0])
+			} else if strings.Contains(birthDateStr, ".") {
+				parts := strings.Split(birthDateStr, ".")
+				if len(parts) == 3 {
+					birthYear, _ = strconv.Atoi(parts[2])
+				}
+			} else if len(birthDateStr) == 4 {
+				birthYear, _ = strconv.Atoi(birthDateStr)
+			}
+		}
+
+		if birthYear == 0 {
+			return nil, t.Errorf("line %d: invalid birth date '%s'", lineNum, birthDateStr)
 		}
 		// Validation: Age must be 2 to 120 relative to report year.
 		age := year - birthYear
@@ -131,7 +152,7 @@ func (s *Service) ParseAndValidateCSV(reader io.Reader, year int) (*entities.Cen
 		members = append(members, entities.MemberRow{
 			Firstname: firstname,
 			Lastname:  lastname,
-			BirthYear: birthYear,
+			BirthDate: birthDateStr,
 			Gender:    gender,
 		})
 	}
@@ -163,11 +184,11 @@ func (s *Service) GenerateSampleCSV(lang string) []byte {
 	writer := csv.NewWriter(&buffer)
 
 	// Header
-	writer.Write(strings.Split(t.T(t.Errorf("Firstname,Lastname,Birthyear,Gender"), lang), ","))
+	writer.Write(strings.Split(t.T(t.Errorf("Firstname,Lastname,Birthdate,Gender"), lang), ","))
 
 	// Sample entries
-	writer.Write(strings.Split(t.T(t.Errorf("Jane,Doe,1990,female"), lang), ","))
-	writer.Write(strings.Split(t.T(t.Errorf("John,Smith,1985,male"), lang), ","))
+	writer.Write(strings.Split(t.T(t.Errorf("Jane,Doe,1990-01-01,female"), lang), ","))
+	writer.Write(strings.Split(t.T(t.Errorf("John,Smith,1985-05-15,male"), lang), ","))
 
 	writer.Flush()
 	return buffer.Bytes()

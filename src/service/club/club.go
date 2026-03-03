@@ -143,6 +143,15 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if addr, ok := updates["address"].(string); ok {
 		club.Membership.Address = addr
 	}
+	if state, ok := updates["state"].(string); ok {
+		club.State = state
+	}
+	if reg, ok := updates["registerNumber"].(string); ok {
+		club.RegisterNumber = reg
+	}
+	if ev, ok := updates["exemptionValidity"].(string); ok {
+		club.ExemptionValidity = ev
+	}
 
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club: %w", err)
@@ -172,7 +181,7 @@ func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.Use
 }
 
 // AddOwner adds a user as a club owner by email.
-func (s *Service) AddOwner(ctx context.Context, clubKey, email string, actor *entities.User) error {
+func (s *Service) AddOwner(ctx context.Context, clubKey, email string, authorizedRepresentative bool, actor *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, actor, clubKey)
 	if err != nil {
 		return t.Errorf("authorization check failed while adding owner: %w", err)
@@ -190,7 +199,7 @@ func (s *Service) AddOwner(ctx context.Context, clubKey, email string, actor *en
 	}
 	targetUser := users[0]
 
-	return s.DB.AddVorstand(ctx, clubKey, targetUser.Key)
+	return s.DB.AddVorstand(ctx, clubKey, targetUser.Key, authorizedRepresentative)
 }
 
 // RemoveOwner removes a user from club owners.

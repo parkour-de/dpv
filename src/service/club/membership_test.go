@@ -34,6 +34,11 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 	key := club.GetKey()
 
+	err = s.DB.AddVorstand(ctx, key, userKey, true)
+	if err != nil {
+		t.Fatalf("AddVorstand failed: %v", err)
+	}
+
 	// Initial status should be inactive
 	if club.Membership.Status != "inactive" {
 		t.Errorf("Initial status should be inactive, got %s", club.Membership.Status)
@@ -107,6 +112,11 @@ func TestMembership_InvalidTransitions(t *testing.T) {
 		t.Fatalf("CreateClub failed: %v", err)
 	}
 	key := club.GetKey()
+
+	err = s.DB.AddVorstand(ctx, key, userKey, true)
+	if err != nil {
+		t.Fatalf("AddVorstand failed: %v", err)
+	}
 
 	// Cannot approve if not requested
 	err = s.Approve(ctx, key, 0)

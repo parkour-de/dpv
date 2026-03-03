@@ -60,7 +60,7 @@ func TestClubOwnerManagement(t *testing.T) {
 	}
 
 	// 5. Add user2 as owner
-	err = db.AddVorstand(ctx, club.GetKey(), user2.GetKey())
+	err = db.AddVorstand(ctx, club.GetKey(), user2.GetKey(), true)
 	if err != nil {
 		t.Fatalf("AddVorstand failed: %v", err)
 	}

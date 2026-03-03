@@ -47,7 +47,7 @@ func TestParseAndValidateCSV(t_test *testing.T) {
 			csv:     "Vorname,Nachname,Geburtsjahr,Geschlecht\nErika,Mustermann,abc,w",
 			year:    2024,
 			wantErr: true,
-			errMsg:  "invalid birth year",
+			errMsg:  "invalid birth date",
 		},
 		{
 			name:    "too young",

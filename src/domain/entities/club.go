@@ -11,6 +11,9 @@ type Club struct {
 	Votes                int             `json:"votes"`   // Votes in assembly, updated post-upload
 	ContactPerson        string          `json:"contact_person,omitempty"`
 	Email                string          `json:"email,omitempty"`
+	State                string          `json:"state,omitempty"`
+	RegisterNumber       string          `json:"registerNumber,omitempty"`
+	ExemptionValidity    string          `json:"exemptionValidity,omitempty"`
 	WebsiteOK            bool            `json:"website_ok"`
 	WebsiteVerification  time.Time       `json:"website_verification"`
 	ParentKey            string          `json:"parent_key,omitempty"` // For recursive SubsidiaryOf edge

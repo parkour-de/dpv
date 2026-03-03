@@ -27,8 +27,8 @@ func TestCensusRepository(t_test *testing.T) {
 	census := &entities.Census{
 		Year: 2024,
 		Members: []entities.MemberRow{
-			{Firstname: "Erika", Lastname: "Mustermann", BirthYear: 1990, Gender: "w"},
-			{Firstname: "Max", Lastname: "Mustermann", BirthYear: 1985, Gender: "m"},
+			{Firstname: "Erika", Lastname: "Mustermann", BirthDate: "1990", Gender: "w"},
+			{Firstname: "Max", Lastname: "Mustermann", BirthDate: "1985", Gender: "m"},
 		},
 	}
 	err = db.UpsertCensus(ctx, club.GetKey(), census)
@@ -62,7 +62,7 @@ func TestCensusRepository(t_test *testing.T) {
 	}
 
 	// 5. Update Census (Add a member)
-	census.Members = append(census.Members, entities.MemberRow{Firstname: "John", Lastname: "Doe", BirthYear: 2000, Gender: "m"})
+	census.Members = append(census.Members, entities.MemberRow{Firstname: "John", Lastname: "Doe", BirthDate: "2000", Gender: "m"})
 	err = db.UpsertCensus(ctx, club.GetKey(), census)
 	if err != nil {
 		t_test.Fatalf("UpsertCensus (update) failed: %s", err)

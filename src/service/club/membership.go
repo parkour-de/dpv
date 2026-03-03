@@ -18,6 +18,17 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 		if club.ParentKey != "" {
 			return t.Errorf("club is a subsidiary and cannot hold independent membership")
 		}
+
+		hasAuthRep := false
+		for _, v := range club.Vorstand {
+			if v.AuthorizedRepresentative {
+				hasAuthRep = true
+				break
+			}
+		}
+		if !hasAuthRep && len(club.Vorstand) > 0 {
+			return t.Errorf("at least one manager must be an authorized representative (§26 BGB)")
+		}
 		return nil
 	}
 
