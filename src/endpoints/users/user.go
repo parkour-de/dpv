@@ -99,7 +99,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 		api.Error(w, r, t.Errorf("user not found"), http.StatusNotFound)
 		return
 	}
-	api.SuccessJson(w, r, userEntity.FilteredResponse(api.IsAdmin(*r.Context().Value("user").(*entities.User))))
+	api.SuccessJson(w, r, userEntity.FilteredResponse(true))
 }
 
 // List returns users dynamically filtered for admin
@@ -402,5 +402,5 @@ func (h *UserHandler) UpdateRoles(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	api.SuccessJson(w, r, updatedUser.FilteredResponse(api.IsAdmin(*r.Context().Value("user").(*entities.User))))
+	api.SuccessJson(w, r, updatedUser.FilteredResponse(true))
 }
