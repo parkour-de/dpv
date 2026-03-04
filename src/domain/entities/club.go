@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -74,6 +75,7 @@ func (c Club) ToCSV() []string {
 	}
 
 	fee := fmt.Sprintf("%.2f", c.Membership.CurrentFee)
+	fee = strings.ReplaceAll(fee, ".", ",")
 	email := c.Email
 	if email == "" {
 		email = "No Email"

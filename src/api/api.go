@@ -89,6 +89,7 @@ func SuccessCSV[T CSVRecord](w http.ResponseWriter, r *http.Request, filename st
 	w.Header().Set("Content-Disposition", "attachment;filename="+filename)
 
 	writer := csv.NewWriter(w)
+	writer.Comma = ';'
 	defer writer.Flush()
 
 	if len(records) > 0 {

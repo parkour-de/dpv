@@ -8,6 +8,7 @@ import (
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/t"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -81,6 +82,7 @@ func (s *Service) IsAuthorized(ctx context.Context, user *entities.User, clubKey
 // ParseAndValidateCSV parses a Census CSV and validates business rules.
 func (s *Service) ParseAndValidateCSV(reader io.Reader, year int) (*entities.Census, error) {
 	csvReader := csv.NewReader(reader)
+	csvReader.Comma = ';'
 	records, err := csvReader.ReadAll()
 	if err != nil {
 		// csv.ReadAll can return partial records on error
@@ -156,6 +158,17 @@ func (s *Service) ParseAndValidateCSV(reader io.Reader, year int) (*entities.Cen
 		if birthYear == 0 {
 			return nil, t.Errorf("line %d: invalid birth date '%s'", lineNum, birthDateStr)
 		}
+
+		// Unify birthDateStr
+		if strings.Contains(birthDateStr, ".") {
+			parts := strings.Split(birthDateStr, ".")
+			if len(parts) == 3 {
+				birthDateStr = fmt.Sprintf("%04d-%02s-%02s", birthYear, parts[1], parts[0])
+			}
+		} else if !strings.Contains(birthDateStr, "-") {
+			birthDateStr = fmt.Sprintf("%04d", birthYear)
+		}
+
 		// Validation: Age must be 2 to 120 relative to report year.
 		age := year - birthYear
 		if age < 2 {
@@ -197,6 +210,7 @@ func isNumeric(s string) bool {
 func (s *Service) GenerateSampleCSV(lang string) []byte {
 	var buffer bytes.Buffer
 	writer := csv.NewWriter(&buffer)
+	writer.Comma = ';' // Enforce semicolon delimiter
 
 	// Header
 	writer.Write(strings.Split(t.T(t.Errorf("Firstname,Lastname,Birthdate,Gender"), lang), ","))
