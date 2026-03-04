@@ -156,7 +156,7 @@ func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
 	if err != nil {
 		return nil, nil, t.Errorf("could not use database: %w", err)
 	}
-	db, err := NewDB(database, config)
+	db, err := NewDB(database, config, test)
 	if err != nil {
 		return nil, nil, t.Errorf("could not initialise database: %w", err)
 	}

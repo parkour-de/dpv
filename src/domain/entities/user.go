@@ -22,6 +22,25 @@ func (u *User) GetMembership() *Membership {
 	return &u.Membership
 }
 
+func (u *User) FilteredResponse(isAdmin bool) interface{} {
+	resp := &User{
+		Entity: Entity{
+			Key:      u.Key,
+			Created:  u.Created,
+			Modified: u.Modified,
+		},
+		Email:      u.Email,
+		LastName:   u.LastName,
+		FirstName:  u.FirstName,
+		Roles:      u.Roles,
+		Membership: u.Membership.FilteredResponse(isAdmin),
+		Language:   u.Language,
+		YourClub:   u.YourClub,
+	}
+	// We retain EmailVerified or other non-secret stuff, but intentionally drop PasswordHash
+	return resp
+}
+
 func (u User) GetCSVHeaders() []string {
 	return []string{"ID", "Typ", "Name", "Email", "Status", "Mitgliedsform", "Nummer", "Beitrag"}
 }

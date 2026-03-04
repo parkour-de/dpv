@@ -18,3 +18,27 @@ type Membership struct {
 type MembershipProvider interface {
 	GetMembership() *Membership
 }
+
+type Filterable interface {
+	FilteredResponse(isAdmin bool) interface{}
+}
+
+func (m Membership) FilteredResponse(isAdmin bool) Membership {
+	resp := Membership{
+		Status:           m.Status,
+		Contribution:     m.Contribution,
+		Type:             m.Type,
+		BeginDate:        m.BeginDate,
+		EndDate:          m.EndDate,
+		Address:          m.Address,
+		MembershipNumber: m.MembershipNumber,
+		CurrentFee:       m.CurrentFee,
+		CurrentVotes:     m.CurrentVotes,
+	}
+	if isAdmin {
+		resp.IBAN = m.IBAN
+		resp.AccountHolder = m.AccountHolder
+		resp.SEPAMandateNumber = m.SEPAMandateNumber
+	}
+	return resp
+}

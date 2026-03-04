@@ -35,9 +35,19 @@ func NewAuditLogger(filePath string) *AuditLogger {
 }
 
 func (l *AuditLogger) Log(ctx context.Context, action AuditAction, entityType string, key string, item interface{}) {
+	if l == nil {
+		return
+	}
+
 	author := "system"
 	if user, ok := ctx.Value("user").(*entities.User); ok && user != nil {
 		author = user.Key
+	}
+
+	// Scrub sensitive data conditionally from the memory
+	loggableItem := item
+	if filterable, ok := item.(entities.Filterable); ok {
+		loggableItem = filterable.FilteredResponse(false)
 	}
 
 	entry := AuditEntry{
@@ -46,7 +56,7 @@ func (l *AuditLogger) Log(ctx context.Context, action AuditAction, entityType st
 		Action: action,
 		Type:   entityType,
 		Key:    key,
-		Node:   item,
+		Node:   loggableItem,
 	}
 
 	// For deletes, we might only have the key, so Node might be nil or partial

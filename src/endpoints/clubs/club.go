@@ -70,7 +70,7 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 	}
 
 	isAdmin := api.IsAdmin(*user)
-	api.SuccessJson(w, r, FilteredResponse(clubEntity, isAdmin))
+	api.SuccessJson(w, r, clubEntity.FilteredResponse(isAdmin))
 }
 
 func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -87,7 +87,7 @@ func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	api.SuccessJson(w, r, FilteredResponse(club, api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
 }
 
 func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -117,7 +117,7 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	club, _ := h.Service.GetClub(r.Context(), key, user)
-	api.SuccessJson(w, r, FilteredResponse(club, api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
 }
 
 func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -135,54 +135,6 @@ func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func FilteredResponse(clubEntity *entities.Club, isAdmin bool) *entities.Club {
-	// For Phase 3.1, suppress sensitive fields like IBAN if desired,
-	// but here we return most fields except internal ones if needed.
-	resp := &entities.Club{
-		Entity: entities.Entity{
-			Key:      clubEntity.Key,
-			Created:  clubEntity.Created,
-			Modified: clubEntity.Modified,
-		},
-		Name:              clubEntity.Name,
-		LegalForm:         clubEntity.LegalForm,
-		State:             clubEntity.State,
-		RegisterNumber:    clubEntity.RegisterNumber,
-		ExemptionValidity: clubEntity.ExemptionValidity,
-		Membership: entities.Membership{
-			Status:       clubEntity.Membership.Status,
-			Contribution: clubEntity.Membership.Contribution,
-			Address:      clubEntity.Membership.Address,
-			BeginDate:    clubEntity.Membership.BeginDate,
-			EndDate:      clubEntity.Membership.EndDate,
-		},
-		Members:              clubEntity.Members,
-		Votes:                clubEntity.Votes,
-		ContactPerson:        clubEntity.ContactPerson,
-		Email:                clubEntity.Email,
-		WebsiteOK:            clubEntity.WebsiteOK,
-		WebsiteVerification:  clubEntity.WebsiteVerification,
-		ParentKey:            clubEntity.ParentKey,
-		OwnerKey:             clubEntity.OwnerKey,
-		StatutesOK:           clubEntity.StatutesOK,
-		StatutesVerification: clubEntity.StatutesVerification,
-		RegistryOK:           clubEntity.RegistryOK,
-		RegistryVerification: clubEntity.RegistryVerification,
-		Vorstand:             clubEntity.Vorstand, // Include Vorstand info from query
-		Census:               clubEntity.Census,   // Include Census info from query
-	}
-
-	if !isAdmin {
-		// Strip emails from Vorstand for non-admins
-		for i := range resp.Vorstand {
-			resp.Vorstand[i].Email = ""
-		}
-	}
-
-	// Note: IBAN and SEPAMandatsnummer are omitted here for security/privacy in general views
-	return resp
 }
 
 func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -214,7 +166,7 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 	// Return updated club
 	club, _ := h.Service.GetClub(r.Context(), key, user)
-	api.SuccessJson(w, r, FilteredResponse(club, api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
 }
 
 func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -234,7 +186,7 @@ func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps htt
 	}
 	// Return updated club
 	club, _ := h.Service.GetClub(r.Context(), key, user)
-	api.SuccessJson(w, r, FilteredResponse(club, api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
 }
 
 func (h *ClubHandler) Search(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -254,7 +206,7 @@ func (h *ClubHandler) Search(w http.ResponseWriter, r *http.Request, _ httproute
 	isAdmin := api.IsAdmin(*user)
 	var filtered []entities.Club
 	for _, c := range clubs {
-		filtered = append(filtered, *FilteredResponse(&c, isAdmin))
+		filtered = append(filtered, *(c.FilteredResponse(isAdmin).(*entities.Club)))
 	}
 
 	api.SuccessJson(w, r, filtered)

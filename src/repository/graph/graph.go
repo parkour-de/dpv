@@ -19,14 +19,18 @@ type Db struct {
 	Audit    *AuditLogger
 }
 
-func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
-	audit := *NewAuditLogger(filepath.Join(config.Storage.DocumentPath, "audit.jsonl"))
+func NewDB(database arangodb.Database, config *dpv.Config, isTest bool) (*Db, error) {
+	var audit *AuditLogger
+	if !isTest {
+		a := NewAuditLogger(filepath.Join(config.Storage.DocumentPath, "audit.jsonl"))
+		audit = a
+	}
 
-	users, err := NewEntityManager[*entities.User](database, "users", false, func() *entities.User { return new(entities.User) }, &audit)
+	users, err := NewEntityManager[*entities.User](database, "users", false, func() *entities.User { return new(entities.User) }, audit)
 	if err != nil {
 		return nil, err
 	}
-	clubs, err := NewEntityManager[*entities.Club](database, "clubs", false, func() *entities.Club { return new(entities.Club) }, &audit)
+	clubs, err := NewEntityManager[*entities.Club](database, "clubs", false, func() *entities.Club { return new(entities.Club) }, audit)
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +38,11 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 	if err != nil {
 		return nil, t.Errorf("could not get or create edges collection: %w", err)
 	}
-	censuses, err := NewEntityManager[*entities.Census](database, "censuses", false, func() *entities.Census { return new(entities.Census) }, &audit)
+	censuses, err := NewEntityManager[*entities.Census](database, "censuses", false, func() *entities.Census { return new(entities.Census) }, audit)
 	if err != nil {
 		return nil, err
 	}
-	configs, err := NewEntityManager[*entities.Config](database, "configs", false, func() *entities.Config { return new(entities.Config) }, &audit)
+	configs, err := NewEntityManager[*entities.Config](database, "configs", false, func() *entities.Config { return new(entities.Config) }, audit)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +70,6 @@ func NewDB(database arangodb.Database, config *dpv.Config) (*Db, error) {
 		edges,
 		censuses,
 		configs,
-		&audit,
+		audit,
 	}, nil
 }

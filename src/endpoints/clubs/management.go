@@ -55,7 +55,7 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 
 	var resp []entities.Club
 	for _, c := range clubs {
-		resp = append(resp, *FilteredResponse(&c, isAdmin))
+		resp = append(resp, *(c.FilteredResponse(isAdmin).(*entities.Club)))
 	}
 
 	if r.Header.Get("Accept") == "text/csv" {

@@ -71,7 +71,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
 	}
-	resp := filteredResponse(userEntity)
+	resp := userEntity.FilteredResponse(false)
 	api.SuccessJson(w, r, resp)
 }
 
@@ -82,7 +82,7 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
-	resp := filteredResponse(userEntity)
+	resp := userEntity.FilteredResponse(false)
 	api.SuccessJson(w, r, resp)
 }
 
@@ -99,7 +99,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 		api.Error(w, r, t.Errorf("user not found"), http.StatusNotFound)
 		return
 	}
-	api.SuccessJson(w, r, filteredResponse(userEntity))
+	api.SuccessJson(w, r, userEntity.FilteredResponse(api.IsAdmin(*r.Context().Value("user").(*entities.User))))
 }
 
 // List returns users dynamically filtered for admin
@@ -122,7 +122,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 	var resp []*entities.User
 	for _, u := range users {
 		userCopy := u
-		resp = append(resp, filteredResponse(&userCopy))
+		resp = append(resp, userCopy.FilteredResponse(false).(*entities.User))
 	}
 	if resp == nil {
 		resp = make([]*entities.User, 0)
@@ -163,7 +163,7 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 
 	// Return updated user
-	resp := filteredResponse(userEntity)
+	resp := userEntity.FilteredResponse(false)
 	api.SuccessJson(w, r, resp)
 }
 
@@ -402,29 +402,5 @@ func (h *UserHandler) UpdateRoles(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	api.SuccessJson(w, r, filteredResponse(updatedUser))
-}
-
-func filteredResponse(userEntity *entities.User) *entities.User {
-	resp := &entities.User{
-		Entity: entities.Entity{
-			Key:      userEntity.Key,
-			Created:  userEntity.Created,
-			Modified: userEntity.Modified,
-		},
-		Email:     userEntity.Email,
-		LastName:  userEntity.LastName,
-		FirstName: userEntity.FirstName,
-		Roles:     userEntity.Roles,
-		Membership: entities.Membership{
-			Status:       userEntity.Membership.Status,
-			Contribution: userEntity.Membership.Contribution,
-			Address:      userEntity.Membership.Address,
-			BeginDate:    userEntity.Membership.BeginDate,
-			EndDate:      userEntity.Membership.EndDate,
-		},
-		Language: userEntity.Language,
-		YourClub: userEntity.YourClub,
-	}
-	return resp
+	api.SuccessJson(w, r, updatedUser.FilteredResponse(api.IsAdmin(*r.Context().Value("user").(*entities.User))))
 }

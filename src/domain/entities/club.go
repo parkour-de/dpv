@@ -38,6 +38,31 @@ func (c *Club) GetMembership() *Membership {
 	return &c.Membership
 }
 
+func (c *Club) FilteredResponse(isAdmin bool) interface{} {
+	var resp Club
+	resp.Key = c.Key
+	resp.Name = c.Name
+	resp.LegalForm = c.LegalForm
+	resp.Members = c.Members
+	resp.Votes = c.Votes
+	resp.ContactPerson = c.ContactPerson
+	resp.Email = c.Email
+	resp.State = c.State
+	resp.RegisterNumber = c.RegisterNumber
+	resp.ExemptionValidity = c.ExemptionValidity
+	resp.WebsiteOK = c.WebsiteOK
+	resp.WebsiteVerification = c.WebsiteVerification
+	resp.ParentKey = c.ParentKey
+	resp.StatutesOK = c.StatutesOK
+	resp.StatutesVerification = c.StatutesVerification
+	resp.RegistryOK = c.RegistryOK
+	resp.RegistryVerification = c.RegistryVerification
+
+	resp.Membership = c.Membership.FilteredResponse(isAdmin)
+
+	return &resp
+}
+
 func (c Club) GetCSVHeaders() []string {
 	return []string{"ID", "Typ", "Name", "Email", "Status", "Mitgliedsform", "Nummer", "Beitrag"}
 }
