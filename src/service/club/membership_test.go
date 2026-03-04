@@ -7,6 +7,7 @@ import (
 	"dpv/dpv/src/repository/storage"
 	"strings"
 	"testing"
+	"time"
 )
 
 func setupTestMembershipService(t *testing.T) *Service {
@@ -43,6 +44,9 @@ func TestMembershipWorkflow(t *testing.T) {
 	if club.Membership.Status != "inactive" {
 		t.Errorf("Initial status should be inactive, got %s", club.Membership.Status)
 	}
+
+	// Insert Census for current year
+	_ = s.DB.UpsertCensus(ctx, key, &entities.Census{Year: time.Now().Year(), MemberCount: 10})
 
 	// Apply
 	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, 0, "ordinary", 1.0)
@@ -135,6 +139,7 @@ func TestMembership_InvalidTransitions(t *testing.T) {
 	s.DB.UpdateClub(ctx, club)
 
 	// Cannot apply if already active
+	_ = s.DB.UpsertCensus(ctx, key, &entities.Census{Year: time.Now().Year(), MemberCount: 10})
 	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, 0, "ordinary", 1.0)
 	if err == nil || !strings.Contains(err.Error(), "cannot apply") {
 		t.Errorf("Expected 'cannot apply' error, got %v", err)

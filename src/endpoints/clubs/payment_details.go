@@ -3,7 +3,6 @@ package clubs
 import (
 	"dpv/dpv/src/api"
 	"net/http"
-	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -41,47 +40,9 @@ func (h *ClubHandler) GetPaymentDetails(w http.ResponseWriter, r *http.Request, 
 		response.SEPAMandateNumber = club.Membership.SEPAMandateNumber
 	} else {
 		// Non-admin (club owner) sees masked IBAN, no Mandatsreferenz
-		response.IBAN = maskIBAN(club.Membership.IBAN)
+		response.IBAN = api.MaskIBAN(club.Membership.IBAN)
 		// SEPAMandateNumber is omitted (omitempty will exclude it)
 	}
 
 	api.SuccessJson(w, r, response)
-}
-
-// maskIBAN masks an IBAN showing only first 4 and last 3 alphanumeric characters
-func maskIBAN(iban string) string {
-	if iban == "" {
-		return ""
-	}
-
-	// Remove spaces for processing
-	cleaned := strings.ReplaceAll(iban, " ", "")
-
-	if len(cleaned) <= 7 {
-		// Too short to mask meaningfully, just return masked version
-		return strings.Repeat("*", len(cleaned))
-	}
-
-	// Get first 4 and last 3
-	first4 := cleaned[:4]
-	last3 := cleaned[len(cleaned)-3:]
-
-	// Calculate middle length
-	middleLen := len(cleaned) - 7
-
-	// Create masked version with spaces for readability (every 4 chars)
-	masked := first4 + " "
-	remaining := middleLen
-	for remaining > 0 {
-		if remaining >= 4 {
-			masked += "**** "
-			remaining -= 4
-		} else {
-			masked += strings.Repeat("*", remaining) + " "
-			remaining = 0
-		}
-	}
-	masked += last3
-
-	return strings.TrimSpace(masked)
 }

@@ -8,6 +8,7 @@ import (
 	"dpv/dpv/src/service/email"
 	"dpv/dpv/src/service/membership"
 	"fmt"
+	"time"
 )
 
 // Apply marks a club's membership as requested.
@@ -32,6 +33,12 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 		if !hasAuthRep && len(club.Vorstand) > 0 {
 			return t.Errorf("at least one manager must be an authorized representative (§26 BGB)")
 		}
+
+		currentYear := time.Now().Year()
+		if _, err := s.DB.GetCensus(ctx, key, currentYear); err != nil {
+			return t.Errorf("membership application requires a census for the current year")
+		}
+
 		return nil
 	}
 

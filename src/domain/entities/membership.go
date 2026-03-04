@@ -36,9 +36,8 @@ func (m Membership) FilteredResponse(isAdmin bool) Membership {
 		CurrentVotes:     m.CurrentVotes,
 	}
 	if isAdmin {
-		resp.IBAN = m.IBAN
-		resp.AccountHolder = m.AccountHolder
-		resp.SEPAMandateNumber = m.SEPAMandateNumber
+		// Payment details (IBAN, Mandate) are completely omitted from FilteredResponse to avoid leaking.
+		// For admins, specific /payment-details endpoints must be used instead.
 	}
 	return resp
 }

@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Service struct {
@@ -48,16 +49,18 @@ func (s *Service) Upsert(ctx context.Context, clubKey string, censusData *entiti
 		return err
 	}
 
-	// Recalculate fees and votes based on new census data.
-	if club, err := s.Db.GetClubByKey(ctx, clubKey); err == nil {
-		club.Members = censusData.MemberCount
-		club.Membership.CurrentFee = float64(club.Members) * 1.0
-		votes := (club.Members / 100) + 1
-		if votes > 5 {
-			votes = 5
+	// Recalculate fees and votes based on new census data only if it is for the current year.
+	if censusData.Year == time.Now().Year() {
+		if club, err := s.Db.GetClubByKey(ctx, clubKey); err == nil {
+			club.Members = censusData.MemberCount
+			club.Membership.CurrentFee = float64(club.Members) * 1.0
+			votes := (club.Members / 100) + 1
+			if votes > 5 {
+				votes = 5
+			}
+			club.Membership.CurrentVotes = votes
+			_ = s.Db.UpdateClub(ctx, club)
 		}
-		club.Membership.CurrentVotes = votes
-		_ = s.Db.UpdateClub(ctx, club)
 	}
 	return nil
 }

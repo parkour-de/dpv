@@ -223,3 +223,41 @@ func SanitizeFilename(name string) string {
 	// clean up multiple underscores or leading/trailing
 	return strings.Trim(safe, "_")
 }
+
+// MaskIBAN masks an IBAN showing only first 4 and last 3 alphanumeric characters
+func MaskIBAN(iban string) string {
+	if iban == "" {
+		return ""
+	}
+
+	// Remove spaces for processing
+	cleaned := strings.ReplaceAll(iban, " ", "")
+
+	if len(cleaned) <= 7 {
+		// Too short to mask meaningfully, just return masked version
+		return strings.Repeat("*", len(cleaned))
+	}
+
+	// Get first 4 and last 3
+	first4 := cleaned[:4]
+	last3 := cleaned[len(cleaned)-3:]
+
+	// Calculate middle length
+	middleLen := len(cleaned) - 7
+
+	// Create masked version with spaces for readability (every 4 chars)
+	masked := first4 + " "
+	remaining := middleLen
+	for remaining > 0 {
+		if remaining >= 4 {
+			masked += "**** "
+			remaining -= 4
+		} else {
+			masked += strings.Repeat("*", remaining) + " "
+			remaining = 0
+		}
+	}
+	masked += last3
+
+	return strings.TrimSpace(masked)
+}

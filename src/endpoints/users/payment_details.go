@@ -24,9 +24,9 @@ func (h *UserHandler) GetPaymentDetails(w http.ResponseWriter, r *http.Request, 
 	}
 
 	response := PaymentDetailsResponse{
-		IBAN:              user.Membership.IBAN,
+		IBAN:              api.MaskIBAN(user.Membership.IBAN),
 		AccountHolder:     user.Membership.AccountHolder,
-		SEPAMandateNumber: user.Membership.SEPAMandateNumber,
+		SEPAMandateNumber: "", // Non-admin gets no Mandatsreferenz
 	}
 
 	api.SuccessJson(w, r, response)
