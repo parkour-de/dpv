@@ -3,7 +3,7 @@ module dpv/dpv
 go 1.25
 
 require (
-	github.com/arangodb/go-driver/v2 v2.1.6
+	github.com/arangodb/go-driver/v2 v2.2.0
 	github.com/julienschmidt/httprouter v1.3.0
 	golang.org/x/crypto v0.47.0
 	golang.org/x/text v0.33.0
