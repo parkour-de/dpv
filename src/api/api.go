@@ -48,6 +48,10 @@ func IsAdmin(user entities.User) bool {
 	return contains(user.Roles, "admin")
 }
 
+func IsAktivAdmin(user entities.User) bool {
+	return contains(user.Roles, "aktivadmin") || contains(user.Roles, "admin")
+}
+
 func contains(roles []string, s string) bool {
 	for _, role := range roles {
 		if role == s {
@@ -64,6 +68,17 @@ func RequireGlobalAdmin(r *http.Request, db *graph.Db) (*entities.User, error) {
 	}
 	if !IsAdmin(*user) {
 		return nil, t.Errorf("you are not an administrator")
+	}
+	return user, nil
+}
+
+func RequireAktivAdmin(r *http.Request, db *graph.Db) (*entities.User, error) {
+	user, err := Authenticated(r, db)
+	if err != nil {
+		return nil, t.Errorf("authentication failed: %w", err)
+	}
+	if !IsAktivAdmin(*user) {
+		return nil, t.Errorf("you are not an actively managing administrator")
 	}
 	return user, nil
 }

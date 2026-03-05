@@ -72,3 +72,13 @@ func (db *Db) GetUsersByFilter(ctx context.Context, memStatus, hasClub string) (
 	builder := func() (string, map[string]interface{}) { return query, bindVars }
 	return db.GetUsers(ctx, builder)
 }
+
+// GetUsersByYourClub retrieves users whose your_club field contains the given string fuzzily.
+func (db *Db) GetUsersByYourClub(ctx context.Context, clubName string) ([]entities.User, error) {
+	query := "FOR u IN users FILTER u.your_club != null AND u.your_club != '' " +
+		"AND CONTAINS(LOWER(u.your_club), LOWER(@clubName)) " +
+		"SORT u.lastname, u.firstname RETURN u"
+	bindVars := map[string]interface{}{"clubName": clubName}
+	builder := func() (string, map[string]interface{}) { return query, bindVars }
+	return db.GetUsers(ctx, builder)
+}

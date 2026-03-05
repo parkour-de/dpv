@@ -42,6 +42,8 @@ func (c *Club) GetMembership() *Membership {
 func (c *Club) FilteredResponse(isAdmin bool) interface{} {
 	var resp Club
 	resp.Key = c.Key
+	resp.Created = c.Created
+	resp.Modified = c.Modified
 	resp.Name = c.Name
 	resp.LegalForm = c.LegalForm
 	resp.Members = c.Members
@@ -54,10 +56,13 @@ func (c *Club) FilteredResponse(isAdmin bool) interface{} {
 	resp.WebsiteOK = c.WebsiteOK
 	resp.WebsiteVerification = c.WebsiteVerification
 	resp.ParentKey = c.ParentKey
+	resp.OwnerKey = c.OwnerKey
 	resp.StatutesOK = c.StatutesOK
 	resp.StatutesVerification = c.StatutesVerification
 	resp.RegistryOK = c.RegistryOK
 	resp.RegistryVerification = c.RegistryVerification
+	resp.Vorstand = c.Vorstand
+	resp.Census = c.Census
 
 	resp.Membership = c.Membership.FilteredResponse(isAdmin)
 

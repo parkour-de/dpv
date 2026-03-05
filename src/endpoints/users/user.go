@@ -88,7 +88,7 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 
 // Get returns a specific user for admin
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	_, err := api.RequireAktivAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
@@ -104,7 +104,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 // List returns users dynamically filtered for admin
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	_, err := api.RequireAktivAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
@@ -165,6 +165,37 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprou
 	// Return updated user
 	resp := userEntity.FilteredResponse(false)
 	api.SuccessJson(w, r, resp)
+}
+
+// Update allows an admin to update user fields
+func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, err := api.RequireAktivAdmin(r, h.Service.DB)
+	if err != nil {
+		api.Error(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	key := ps.ByName("key")
+
+	var updates map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
+		return
+	}
+
+	for k, v := range updates {
+		if s, ok := v.(string); ok {
+			updates[k] = strings.TrimSpace(s)
+		}
+	}
+
+	updatedUser, err := h.Service.UpdateUser(r.Context(), key, updates)
+	if err != nil {
+		api.Error(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	api.SuccessJson(w, r, updatedUser.FilteredResponse(true))
 }
 
 // RequestEmailValidation - requires authentication

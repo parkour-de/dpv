@@ -66,11 +66,7 @@ func (s *Service) List(ctx context.Context, memStatus, hasClub string) ([]entiti
 	return s.DB.GetUsersByFilter(ctx, memStatus, hasClub)
 }
 
-func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) error {
-	user, ok := ctx.Value("user").(*entities.User)
-	if !ok || user == nil {
-		return t.Errorf("user not found in context")
-	}
+func applyUpdates(user *entities.User, updates map[string]interface{}) (bool, error) {
 	updated := false
 
 	if first, ok := updates["firstname"].(string); ok && first != "" {
@@ -87,6 +83,11 @@ func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) 
 		} else {
 			user.Language = lang
 		}
+		updated = true
+	}
+
+	if db, ok := updates["dateOfBirth"].(string); ok {
+		user.DateOfBirth = db
 		updated = true
 	}
 
@@ -113,9 +114,36 @@ func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) 
 	}
 
 	if !updated {
-		return t.Errorf("no fields to update")
+		return false, t.Errorf("no fields to update")
+	}
+	return true, nil
+}
+
+func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) error {
+	user, ok := ctx.Value("user").(*entities.User)
+	if !ok || user == nil {
+		return t.Errorf("user not found in context")
+	}
+
+	_, err := applyUpdates(user, updates)
+	if err != nil {
+		return err
 	}
 	return s.DB.Users.Update(user, ctx)
+}
+
+func (s *Service) UpdateUser(ctx context.Context, userKey string, updates map[string]interface{}) (*entities.User, error) {
+	user, err := s.DB.Users.Read(userKey, ctx)
+	if err != nil {
+		return nil, t.Errorf("user not found: %w", err)
+	}
+
+	_, err = applyUpdates(user, updates)
+	if err != nil {
+		return nil, err
+	}
+	err = s.DB.Users.Update(user, ctx)
+	return user, err
 }
 
 // RequestEmailValidation sends validation email

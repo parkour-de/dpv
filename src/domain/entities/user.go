@@ -17,6 +17,7 @@ type User struct {
 	Membership    Membership `json:"membership"`
 	Language      string     `json:"language"`
 	YourClub      string     `json:"your_club,omitempty"`
+	DateOfBirth   string     `json:"dateOfBirth,omitempty"`
 }
 
 func (u *User) GetMembership() *Membership {
@@ -30,13 +31,14 @@ func (u *User) FilteredResponse(isAdmin bool) interface{} {
 			Created:  u.Created,
 			Modified: u.Modified,
 		},
-		Email:      u.Email,
-		LastName:   u.LastName,
-		FirstName:  u.FirstName,
-		Roles:      u.Roles,
-		Membership: u.Membership.FilteredResponse(isAdmin),
-		Language:   u.Language,
-		YourClub:   u.YourClub,
+		Email:       u.Email,
+		LastName:    u.LastName,
+		FirstName:   u.FirstName,
+		Roles:       u.Roles,
+		Membership:  u.Membership.FilteredResponse(isAdmin),
+		Language:    u.Language,
+		YourClub:    u.YourClub,
+		DateOfBirth: u.DateOfBirth,
 	}
 	// We retain EmailVerified or other non-secret stuff, but intentionally drop PasswordHash
 	return resp

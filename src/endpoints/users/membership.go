@@ -22,7 +22,7 @@ func (h *UserHandler) Apply(w http.ResponseWriter, r *http.Request, _ httprouter
 }
 
 func (h *UserHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	_, err := api.RequireAktivAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
@@ -35,7 +35,7 @@ func (h *UserHandler) Approve(w http.ResponseWriter, r *http.Request, ps httprou
 }
 
 func (h *UserHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	_, err := api.RequireAktivAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
@@ -48,7 +48,7 @@ func (h *UserHandler) Deny(w http.ResponseWriter, r *http.Request, ps httprouter
 }
 
 func (h *UserHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := api.RequireGlobalAdmin(r, h.Service.DB)
+	_, err := api.RequireAktivAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
