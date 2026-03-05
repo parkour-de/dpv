@@ -100,7 +100,7 @@ func TestRegisterAndGetMe(t *testing.T) {
 	defer server.Close()
 
 	// Register user
-	reqBody := `{"email":"test@example.com","password":"TestPassword123!","firstname":"John","lastname":"Doe"}`
+	reqBody := `{"email":"test@example.com","password":"TestPassword123!","firstname":"John","lastname":"Doe","consent_privacy":true}`
 	resp, err := http.Post("http://localhost:8082/dpv/users", "application/json", strings.NewReader(reqBody))
 	if err != nil {
 		t.Fatal(err)
@@ -163,7 +163,7 @@ func TestDocumentUpload(t *testing.T) {
 	client := &http.Client{}
 
 	// Register
-	regBody := `{"email":"uploader@example.com","password":"UploaderPass123!","firstname":"U","lastname":"L"}`
+	regBody := `{"email":"uploader@example.com","password":"UploaderPass123!","firstname":"U","lastname":"L","consent_privacy":true}`
 	http.Post("http://localhost:8084/dpv/users", "application/json", strings.NewReader(regBody))
 
 	// Create Club

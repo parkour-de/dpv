@@ -1,5 +1,6 @@
 # temporary working files
 devel/
+audit.jsonl
 
 # Config files (passwords)
 config.yml

@@ -25,10 +25,12 @@ func NewHandler(service *user.Service) *UserHandler {
 }
 
 type RegisterRequest struct {
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	LastName  string `json:"lastname"`
-	FirstName string `json:"firstname"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	LastName       string `json:"lastname"`
+	FirstName      string `json:"firstname"`
+	DateOfBirth    string `json:"dateOfBirth"`
+	ConsentPrivacy bool   `json:"consent_privacy"`
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -42,11 +44,17 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
 
+	if !req.ConsentPrivacy {
+		api.Error(w, r, t.Errorf("you must accept the privacy policy"), http.StatusBadRequest)
+		return
+	}
+
 	userEntity := &entities.User{
-		Email:     req.Email,
-		LastName:  req.LastName,
-		FirstName: req.FirstName,
-		Roles:     []string{"user"},
+		Email:       req.Email,
+		LastName:    req.LastName,
+		FirstName:   req.FirstName,
+		DateOfBirth: req.DateOfBirth,
+		Roles:       []string{"user"},
 	}
 
 	err := h.Service.CreateUser(context.Background(), userEntity, req.Password)
@@ -55,7 +63,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		var tErr *t.TranslatableError
 		if errors.As(err, &tErr) {
 			switch tErr.Key {
-			case "firstname must not be empty", "lastname must not be empty", "email must not be empty", "password must not be empty", "user with this email already exists":
+			case "firstname must not be empty", "lastname must not be empty", "email must not be empty", "password must not be empty", "user with this email already exists", "you must accept the privacy policy":
 				api.Error(w, r, err, http.StatusBadRequest)
 				return
 			}

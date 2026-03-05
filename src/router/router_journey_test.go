@@ -15,7 +15,7 @@ func TestHierarchyJourney(t *testing.T) {
 	client := &http.Client{}
 
 	// 1. Register main user and admin
-	regBody := `{"email":"admin@hierarchy.local","password":"UserPass123!","firstname":"Admin","lastname":"Owner"}`
+	regBody := `{"email":"admin@hierarchy.local","password":"UserPass123!","firstname":"Admin","lastname":"Owner","consent_privacy":true}`
 	resp, _ := http.Post("http://localhost:8085/dpv/users", "application/json", strings.NewReader(regBody))
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Admin registration failed: %d", resp.StatusCode)
@@ -70,10 +70,10 @@ func TestUserMembershipJourney(t *testing.T) {
 	client := &http.Client{}
 
 	// Register 2 users: one standard, one admin
-	regUser := `{"email":"member@journey.local","password":"UserPass123!","firstname":"User","lastname":"Member"}`
+	regUser := `{"email":"member@journey.local","password":"UserPass123!","firstname":"User","lastname":"Member","consent_privacy":true}`
 	http.Post("http://localhost:8086/dpv/users", "application/json", strings.NewReader(regUser))
 
-	regAdmin := `{"email":"admin@journey.local","password":"AdminPass123!","firstname":"Admin","lastname":"Super"}`
+	regAdmin := `{"email":"admin@journey.local","password":"AdminPass123!","firstname":"Admin","lastname":"Super","consent_privacy":true}`
 	resp, _ := http.Post("http://localhost:8086/dpv/users", "application/json", strings.NewReader(regAdmin))
 
 	// Get admin user key
