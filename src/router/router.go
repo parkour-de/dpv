@@ -71,9 +71,6 @@ func NewServer(configPath string, test bool) *http.Server {
 	r.GET("/dpv/version", middleware.CORSMiddleware(Version))
 	r.POST("/dpv/users", middleware.CORSMiddleware(userHandler.Register))
 	r.GET("/dpv/users/me", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Me, db)))
-	r.PATCH("/dpv/users/me", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.UpdateMe, db)))
-	r.GET("/dpv/users/me/payment-details", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.GetPaymentDetails, db)))
-
 	r.POST("/dpv/users/request-email-validation", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.RequestEmailValidation, db)))
 	r.GET("/dpv/users/validate-email", middleware.CORSMiddleware(userHandler.ValidateEmail))
 

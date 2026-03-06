@@ -6,6 +6,7 @@ import (
 	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/security"
+	"strings"
 	"testing"
 	"time"
 )
@@ -80,7 +81,7 @@ func TestUpdateMe(t *testing.T) {
 	userCtx := context.WithValue(ctx, "user", user)
 
 	// Success
-	err := service.UpdateMe(userCtx, map[string]interface{}{"firstname": "NewFirst"})
+	user, err := service.UpdateUser(userCtx, user.Key, map[string]interface{}{"firstname": "NewFirst"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -89,7 +90,7 @@ func TestUpdateMe(t *testing.T) {
 	}
 
 	// Test Update LastName
-	err = service.UpdateMe(userCtx, map[string]interface{}{"lastname": "NewLast"})
+	user, err = service.UpdateUser(userCtx, user.Key, map[string]interface{}{"lastname": "NewLast"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -98,15 +99,15 @@ func TestUpdateMe(t *testing.T) {
 	}
 
 	// Test No Update
-	err = service.UpdateMe(userCtx, map[string]interface{}{})
+	_, err = service.UpdateUser(userCtx, user.Key, map[string]interface{}{})
 	if err == nil || err.Error() != "no fields to update" {
 		t.Errorf("Expected 'no fields to update' error, got '%v'", err)
 	}
 
-	// User not in context
-	err = service.UpdateMe(ctx, map[string]interface{}{"firstname": "NewName"})
-	if err == nil || err.Error() != "user not found in context" {
-		t.Errorf("Expected 'user not found in context' error, got '%v'", err)
+	// User not found
+	_, err = service.UpdateUser(ctx, "non-existent-key", map[string]interface{}{"firstname": "NewName"})
+	if err == nil || !strings.Contains(err.Error(), "user not found") {
+		t.Errorf("Expected 'user not found' error, got '%v'", err)
 	}
 }
 

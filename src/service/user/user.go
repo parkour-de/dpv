@@ -119,19 +119,6 @@ func applyUpdates(user *entities.User, updates map[string]interface{}) (bool, er
 	return true, nil
 }
 
-func (s *Service) UpdateMe(ctx context.Context, updates map[string]interface{}) error {
-	user, ok := ctx.Value("user").(*entities.User)
-	if !ok || user == nil {
-		return t.Errorf("user not found in context")
-	}
-
-	_, err := applyUpdates(user, updates)
-	if err != nil {
-		return err
-	}
-	return s.DB.Users.Update(user, ctx)
-}
-
 func (s *Service) UpdateUser(ctx context.Context, userKey string, updates map[string]interface{}) (*entities.User, error) {
 	user, err := s.DB.Users.Read(userKey, ctx)
 	if err != nil {

@@ -94,20 +94,27 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	api.SuccessJson(w, r, resp)
 }
 
-// Get returns a specific user for admin
+// Get returns a specific user
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := api.RequireAktivAdmin(r, h.Service.DB)
+	userEntity, err := api.GetUserFromContext(r)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
+
 	key := ps.ByName("key")
-	userEntity, err := h.Service.DB.Users.Read(key, r.Context())
+	isAdmin := api.IsAktivAdmin(*userEntity)
+
+	if key != userEntity.Key && !isAdmin {
+		api.Error(w, r, t.Errorf("Unauthorized access"), http.StatusForbidden)
+		return
+	}
+	userEntityFetched, err := h.Service.DB.Users.Read(key, r.Context())
 	if err != nil {
 		api.Error(w, r, t.Errorf("user not found"), http.StatusNotFound)
 		return
 	}
-	api.SuccessJson(w, r, userEntity.FilteredResponse(true))
+	api.SuccessJson(w, r, userEntityFetched.FilteredResponse(isAdmin))
 }
 
 // List returns users dynamically filtered for admin
@@ -144,46 +151,21 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 	api.SuccessJson(w, r, resp)
 }
 
-// UpdateMe allows the user to update their vorname and/or name
-func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+// Update allows a user to update their own fields, or an admin to update any user
+func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	userEntity, err := api.GetUserFromContext(r)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	var updates map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
-		api.Error(w, r, t.Errorf("invalid JSON body"), http.StatusBadRequest)
-		return
-	}
-
-	for k, v := range updates {
-		if s, ok := v.(string); ok {
-			updates[k] = strings.TrimSpace(s)
-		}
-	}
-
-	err = h.Service.UpdateMe(r.Context(), updates)
-	if err != nil {
-		api.Error(w, r, err, http.StatusBadRequest)
-		return
-	}
-
-	// Return updated user
-	resp := userEntity.FilteredResponse(false)
-	api.SuccessJson(w, r, resp)
-}
-
-// Update allows an admin to update user fields
-func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := api.RequireAktivAdmin(r, h.Service.DB)
-	if err != nil {
-		api.Error(w, r, err, http.StatusUnauthorized)
-		return
-	}
-
 	key := ps.ByName("key")
+	isAdmin := api.IsAktivAdmin(*userEntity)
+
+	if key != userEntity.Key && !isAdmin {
+		api.Error(w, r, t.Errorf("Unauthorized access"), http.StatusForbidden)
+		return
+	}
 
 	var updates map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
@@ -203,7 +185,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	api.SuccessJson(w, r, updatedUser.FilteredResponse(true))
+	api.SuccessJson(w, r, updatedUser.FilteredResponse(isAdmin))
 }
 
 // RequestEmailValidation - requires authentication

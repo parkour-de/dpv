@@ -41,24 +41,7 @@ securitySchemes:
           body:
             application/json:
               type: User
-    patch:
-      description: Update the current authenticated user
-      securedBy: [ basicAuth ]
-      body:
-        application/json:
-          type: object
-          properties:
-            lastname: string
-            firstname: string
-            language?: string
-            your_club?: string
-            address?: string
-      responses:
-        200:
-          description: Updated user details
-          body:
-            application/json:
-              type: User
+
     /apply:
       post:
         description: Apply for active membership
@@ -89,20 +72,7 @@ securitySchemes:
         responses:
           200:
             description: Membership cancelled
-    /payment-details:
-      get:
-        description: Get the current user's unmasked payment information
-        securedBy: [ basicAuth ]
-        responses:
-          200:
-            description: Payment information
-            body:
-              application/json:
-                type: object
-                properties:
-                  iban: string
-                  account_holder?: string
-                  sepa_mandate_number?: string
+
   /request-email-validation:
     post:
       description: Request a validation email for the user's email address. Requires authentication.
