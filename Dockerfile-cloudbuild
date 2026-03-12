@@ -2,4 +2,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY bin/membership /app/bin/membership
+COPY cfg /app/cfg
 ENTRYPOINT ["/app/bin/membership"]

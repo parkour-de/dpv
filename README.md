@@ -79,10 +79,10 @@ arangodb/arangodb:latest
 Copy the example configuration and customize it:
 
 ```
-cp config.example.yml config.yml
+cp cfg/config.example.yml cfg/config.yml
 ```
 
-Update `config.yml` with your ArangoDB credentials:
+Update `cfg/config.yml` with your ArangoDB credentials:
 
 ```
 db:
@@ -130,17 +130,17 @@ The API will be available at `http://localhost:8080` (or your specified port).
 ### Authenticated Endpoints (require HTTP Basic Auth)
 
 - `GET /dpv/users/me` - Get current user profile
-- `PATCH /dpv/admin/users/:key/roles` - Update user roles (Admin only)
+- `PATCH /dpv/user/:key/roles` - Update user roles (Admin only)
 - `GET /dpv/clubs` - List clubs (with pagination/filtering)
 - `POST /dpv/clubs` - Create a new club
-- `GET /dpv/clubs/:key` - Get club details
-- `PATCH /dpv/clubs/:key` - Update club details
-- `DELETE /dpv/clubs/:key` - Delete a club
-- `POST /dpv/clubs/:key/apply` - Apply for membership
-- `POST /dpv/clubs/:key/approve` - Approve membership (Admin only)
-- `POST /dpv/clubs/:key/deny` - Deny membership (Admin only)
-- `POST /dpv/clubs/:key/cancel` - Cancel/reset membership
-- `POST /dpv/clubs/:key/documents` - Upload club documents
+- `GET /dpv/club/:key` - Get club details
+- `PATCH /dpv/club/:key` - Update club details
+- `DELETE /dpv/club/:key` - Delete a club
+- `POST /dpv/club/:key/apply` - Apply for membership
+- `POST /dpv/club/:key/approve` - Approve membership (Admin only)
+- `POST /dpv/club/:key/deny` - Deny membership (Admin only)
+- `POST /dpv/club/:key/cancel` - Cancel/reset membership
+- `POST /dpv/club/:key/documents` - Upload club documents
 
 ### Example Usage
 
@@ -151,8 +151,10 @@ curl -X POST http://localhost:8080/dpv/users \
 -d '{
 "email": "user@example.com",
 "password": "SecurePass123!",
-"name": "Doe",
-"vorname": "John"
+"lastname": "Doe",
+"firstname": "John",
+"dateOfBirth": "1990-01-01",
+"consent_privacy": true
 }'
 ```
 
@@ -267,7 +269,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Phase 4: Membership Processing ✅
 - [x] Membership applications
 - [x] Approval workflows
-- [ ] Fee calculation and management (planned)
+- [x] Fee calculation and management
 
 ### Phase 5: Graph Relationships 📋
 - [ ] Hierarchical organization support (Landesverbände)

@@ -11,7 +11,7 @@ import (
 )
 
 func setupTestMembershipService(t *testing.T) *Service {
-	db, _, err := graph.Init("../../../config.yml", true)
+	db, _, err := graph.Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
 	}

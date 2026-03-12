@@ -14,7 +14,7 @@ var version = "0"
 
 func main() {
 	log.Printf("DPV version %s", version)
-	server := router.NewServer("config.yml", false)
+	server := router.NewServer("cfg/config.yml", false)
 	dpv.ConfigInstance.Settings.Version = version
 	socketPath := os.Getenv("UNIX")
 	c := make(chan os.Signal, 1)

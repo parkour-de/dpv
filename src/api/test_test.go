@@ -16,7 +16,7 @@ func TestMain(m *testing.M) {
 
 func Cleanup() {
 	var err error
-	config, err := dpv.NewConfig("../../config.yml")
+	config, err := dpv.NewConfig("../../cfg/config.yml")
 	if err != nil {
 		log.Fatalf("could not initialise config instance: %s", err)
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func TestClubOwnerManagement(t *testing.T) {
-	db, _, err := Init("../../../config.yml", true)
+	db, _, err := Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("db initialisation failed: %s", err)
 	}

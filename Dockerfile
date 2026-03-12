@@ -24,8 +24,11 @@ RUN go build -v -o /app/bin/membership -ldflags "-X main.version=${VERSION}" ./s
 
 FROM alpine:latest
 
+WORKDIR /app
+
 # Copy the binary to the production image from the builder stage.
 COPY --from=builder /app/bin/membership /app/bin/membership
+COPY --from=builder /app/cfg /app/cfg
 
 # Run the web service on container startup.
 CMD ["/app/bin/membership"]

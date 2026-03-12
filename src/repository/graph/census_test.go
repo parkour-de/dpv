@@ -7,7 +7,7 @@ import (
 )
 
 func TestCensusRepository(t_test *testing.T) {
-	db, _, err := Init("../../../config.yml", true)
+	db, _, err := Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t_test.Fatalf("db initialisation failed: %s", err)
 	}

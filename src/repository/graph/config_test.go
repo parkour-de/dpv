@@ -9,7 +9,7 @@ import (
 
 func TestGetNextSequence(t *testing.T) {
 	// Setup DB connection
-	configPath := filepath.Join("../../../", "config.yml")
+	configPath := filepath.Join("../../../", "cfg", "config.yml")
 	db, config, err := graph.Init(configPath, true)
 	if err != nil {
 		t.Fatalf("could not initialise database: %v", err)

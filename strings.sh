@@ -13,7 +13,7 @@ if [ ! -f "keys.txt" ]; then
 fi
 
 for LANG in $LANGUAGES; do
-  FILE="strings_${LANG}.ini"
+  FILE="cfg/strings_${LANG}.ini"
   
   if [ ! -f "$FILE" ]; then
     awk '{print $0"="}' "keys.txt" | sort > "$FILE"

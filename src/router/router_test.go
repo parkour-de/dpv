@@ -22,7 +22,7 @@ func setupServer(t *testing.T, port string) *http.Server {
 	tempDir := t.TempDir()
 
 	// Load original config
-	data, err := os.ReadFile("../../config.yml")
+	data, err := os.ReadFile("../../cfg/config.yml")
 	if err != nil {
 		t.Fatalf("failed to read config: %v", err)
 	}

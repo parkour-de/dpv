@@ -25,7 +25,7 @@ jobs:
       run: go build -v -o ./app/bin/membership ./src/cmd/membership
 
     - name: Create config.yml
-      run: cp ./config.example.yml ./config.yml
+      run: cp ./cfg/config.example.yml ./cfg/config.yml
 
     - name: Start database
       run: docker run -d -p 8529:8529 -e ARANGO_ROOT_PASSWORD=change-me-together-thick-music-moon --name arango-db arangodb/arangodb:3.12

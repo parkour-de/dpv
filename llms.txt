@@ -1,0 +1,57 @@
+# DPV (Deutscher Parkour Verband) Membership API - Agent/LLM Instructions
+
+Welcome, Assistant! This document explains the context, flow, and usage of the DPV Membership Management API. Use this as your reference when building scripts, interacting with the backend, or adding new features.
+
+## 🤸 Context & Purpose
+
+The Deutscher Parkour Verband (DPV) acts as an umbrella organization for parkour clubs across Germany. Clubs join the DPV to benefit from:
+- Training insurances
+- Discounted trainer education
+- Access to public funds & local infrastructure improvements
+- Public relations and event planning assistance
+- Voting rights and expert networking
+
+**API Purpose:** This API tracks clubs, user memberships, census data (member counts changing over years), contact persons, and financial data. 
+- **For Club Owners:** Setup user accounts, create clubs, manage memberships, update bank accounts (SEPA), upload legal documents, and add other managers.
+- **For DPV Board Members (Admins):** Oversee all clubs, verify enrollment documents, check status, and pull payment info for recurring membership fees.
+
+## 🛠 Flow & Common Workflows
+
+The API relies on **HTTP Basic Auth**, using the user's `email` and `password` for authenticated endpoints.
+
+### 1. User Registration & Authentication
+- **Endpoint:** `POST /dpv/users`
+- **Body Context:** To register, you must provide `email`, `password`, `firstname`, `lastname`, and mandatory consent variables (e.g., `consent_privacy: true`).
+- **Auth:** All subsequent authenticated calls require HTTP Basic Auth with the registered email and password.
+- **Get Me:** `GET /dpv/users/me` returns the current user profile, membership status, and roles.
+
+### 2. User Membership Journey
+- **Apply for DPV Membership:** `POST /dpv/users/me/apply` with flags (`consent_privacy`, `consent_accuracy`, `consent_statutes`, `consent_finances`). Changes status to `requested`.
+- **Cancel:** `POST /dpv/users/me/cancel` with an `end_date`. Resets status to `inactive` or `cancelled`.
+
+### 3. Club Creation & Management
+- **Create a Club:** `POST /dpv/clubs` with `name` and `legal_form` (e.g., "e.V."). Returns the created club JSON, which includes a `_key`.
+- **Reference Club by Key:** Use `_key` in the URL (e.g., `/dpv/club/{key}`) to patch, delete, or fetch club details.
+- **Hierarchy Mapping:** Clubs can have parent clubs. You can update a club's parent by patching `{"parent_key": "some_other_key"}` to `PATCH /dpv/club/{key}`. (Note: Cyclic hierarchies are rejected with 400 Bad Request).
+
+### 4. Document Verification
+Clubs must upload legal documents for verification by DPV board members.
+- **Upload:** `POST /dpv/club/{key}/documents`
+- **Format:** `multipart/form-data` with a file field named `document`. Example target: `test.pdf`.
+- **Success check:** The API returns a message confirming upload ("erfolgreich hochgeladen").
+
+### 5. API Testing & Routing Quirks
+- **Router:** The application uses `httprouter` in Go.
+- **Plurals vs Singular:** Pay close attention to URL paths:
+  - `POST /dpv/clubs` (Create/List) vs `GET /dpv/club/{key}` (Retrieve/Modify specific club)
+  - `GET /dpv/users` (List) vs `GET /dpv/user/{key}` (Retrieve specific user)
+- **JSON Formatting:** Most endpoints consume and return JSON. The `GET /dpv/version` endpoint is the only one returning a raw string.
+
+## 🤖 Rules for Agents
+When modifying or interacting with the codebase:
+1. **Tests:** Refer to `/dpv/src/router/router_test.go` and `/dpv/src/router/router_journey_test.go` for working examples of multipart uploads and standard flow assertions.
+2. **Docs:** Keep `docs/api.raml` and `README.md` synchronized whenever exposing new routes in `router.go`.
+3. **Database Mocking:** Tests spin up dynamic `config.yml` files pointing to temporary directories (for storage). When adding new tests, follow the `setupServer` pattern in `router_test.go`.
+4. **Translations:** If modifying error messages or returned strings, remember that the backend employs a translation package (`t.Errorf(...)`), backed by `.ini` files. 
+
+Feel free to use this text as a mental model when generating new backend endpoints, troubleshooting tests, or scaffolding admin frontend views!

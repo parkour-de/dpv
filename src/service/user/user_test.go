@@ -12,7 +12,7 @@ import (
 )
 
 func setupTestService(t *testing.T) *Service {
-	db, config, err := graph.Init("../../../config.yml", true)
+	db, config, err := graph.Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("DB initialization failed: %s", err)
 	}

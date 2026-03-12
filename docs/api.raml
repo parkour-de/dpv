@@ -25,6 +25,8 @@ securitySchemes:
           password: string
           lastname: string
           firstname: string
+          dateOfBirth: string
+          consent_privacy: boolean
     responses:
       200:
         description: User created
@@ -258,6 +260,31 @@ securitySchemes:
         body:
           application/json:
             type: User
+  patch:
+    description: Update a specific user (Admin or self)
+    body:
+      application/json:
+        type: object
+        properties:
+          firstname?: string
+          lastname?: string
+          email?: string
+          dateOfBirth?: string
+    responses:
+      200:
+        description: User updated
+        body:
+          application/json:
+            type: User
+  /payment-details:
+    get:
+      description: Get payment details for a specific user
+      responses:
+        200:
+          description: Payment details
+          body:
+            application/json:
+              type: object
   /roles:
     patch:
       description: Update a user's roles (Admin only)
@@ -379,6 +406,15 @@ securitySchemes:
               type: Club
         403:
           description: Unauthorized
+    /active-members:
+      get:
+        description: Get active members of the club
+        responses:
+          200:
+            description: List of active members
+            body:
+              application/json:
+                type: User[]
     patch:
       description: Partially update a club details (Board members only)
       body:
@@ -589,7 +625,7 @@ securitySchemes:
         body:
           text/csv:
 
-/admin/audit:
+/audit:
   securedBy: [ basicAuth ]
   get:
     description: Get a list of recent audit log entries (Admin only)
