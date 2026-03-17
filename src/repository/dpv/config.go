@@ -3,6 +3,7 @@ package dpv
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -70,6 +71,6 @@ func NewConfig(configPath string) (*Config, error) {
 	if err := d.Decode(&config); err != nil {
 		return nil, fmt.Errorf("could not decode config file: %w", err)
 	}
-	config.Path = configPath[:len(configPath)-len("config.yml")]
+	config.Path = filepath.Dir(configPath) + "/"
 	return config, nil
 }

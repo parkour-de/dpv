@@ -51,7 +51,7 @@ func setupServer(t *testing.T, port string) *http.Server {
 	}
 
 	// Copy all strings_*.ini so translations still work
-	matches, _ := filepath.Glob("../../strings_*.ini")
+	matches, _ := filepath.Glob("../../cfg/strings_*.ini")
 	for _, match := range matches {
 		filename := filepath.Base(match)
 		data, err := os.ReadFile(match)
