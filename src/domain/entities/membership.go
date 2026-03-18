@@ -19,11 +19,11 @@ type MembershipProvider interface {
 	GetMembership() *Membership
 }
 
-type Filterable interface {
-	FilteredResponse(isAdmin bool) interface{}
+type FilteredResponder interface {
+	FilteredResponse() interface{}
 }
 
-func (m Membership) FilteredResponse(isAdmin bool) Membership {
+func (m Membership) FilteredResponse() Membership {
 	resp := Membership{
 		Status:           m.Status,
 		Contribution:     m.Contribution,
@@ -34,10 +34,6 @@ func (m Membership) FilteredResponse(isAdmin bool) Membership {
 		MembershipNumber: m.MembershipNumber,
 		CurrentFee:       m.CurrentFee,
 		CurrentVotes:     m.CurrentVotes,
-	}
-	if isAdmin {
-		// Payment details (IBAN, Mandate) are completely omitted from FilteredResponse to avoid leaking.
-		// For admins, specific /payment-details endpoints must be used instead.
 	}
 	return resp
 }

@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-func TestCensusRepository(t_test *testing.T) {
+func TestCensusRepository(t *testing.T) {
 	db, _, err := Init("../../../cfg/config.yml", true)
 	if err != nil {
-		t_test.Fatalf("db initialisation failed: %s", err)
+		t.Fatalf("db initialisation failed: %s", err)
 	}
 	ctx := context.Background()
 
@@ -20,7 +20,7 @@ func TestCensusRepository(t_test *testing.T) {
 	}
 	err = db.Clubs.Create(club, ctx)
 	if err != nil {
-		t_test.Fatalf("Club creation failed: %s", err)
+		t.Fatalf("Club creation failed: %s", err)
 	}
 
 	// 2. Upsert a Census
@@ -33,31 +33,31 @@ func TestCensusRepository(t_test *testing.T) {
 	}
 	err = db.UpsertCensus(ctx, club.GetKey(), census)
 	if err != nil {
-		t_test.Fatalf("UpsertCensus failed: %s", err)
+		t.Fatalf("UpsertCensus failed: %s", err)
 	}
 
 	// 3. Verify Census Node was created and has MemberCount
 	fetchedCensus, err := db.GetCensus(ctx, club.GetKey(), 2024)
 	if err != nil {
-		t_test.Fatalf("GetCensus failed: %s", err)
+		t.Fatalf("GetCensus failed: %s", err)
 	}
 	if fetchedCensus.MemberCount != 2 {
-		t_test.Errorf("expected member count 2, got %d", fetchedCensus.MemberCount)
+		t.Errorf("expected member count 2, got %d", fetchedCensus.MemberCount)
 	}
 
 	// 4. Verify Club Summary
 	fetchedClub, err := db.GetClubByKey(ctx, club.GetKey())
 	if err != nil {
-		t_test.Fatalf("GetClubByKey failed: %v", err)
+		t.Fatalf("GetClubByKey failed: %v", err)
 	}
 	if len(fetchedClub.Census) != 1 {
-		t_test.Errorf("expected 1 census summary, got %d", len(fetchedClub.Census))
+		t.Errorf("expected 1 census summary, got %d", len(fetchedClub.Census))
 	} else {
 		if fetchedClub.Census[0].Year != 2024 {
-			t_test.Errorf("expected year 2024, got %d", fetchedClub.Census[0].Year)
+			t.Errorf("expected year 2024, got %d", fetchedClub.Census[0].Year)
 		}
 		if fetchedClub.Census[0].Count != 2 {
-			t_test.Errorf("expected count 2, got %d", fetchedClub.Census[0].Count)
+			t.Errorf("expected count 2, got %d", fetchedClub.Census[0].Count)
 		}
 	}
 
@@ -65,17 +65,17 @@ func TestCensusRepository(t_test *testing.T) {
 	census.Members = append(census.Members, entities.MemberRow{Firstname: "John", Lastname: "Doe", BirthDate: "2000", Gender: "m"})
 	err = db.UpsertCensus(ctx, club.GetKey(), census)
 	if err != nil {
-		t_test.Fatalf("UpsertCensus (update) failed: %s", err)
+		t.Fatalf("UpsertCensus (update) failed: %s", err)
 	}
 
 	// 6. Verify updated count
 	fetchedCensus, _ = db.GetCensus(ctx, club.GetKey(), 2024)
 	if fetchedCensus.MemberCount != 3 {
-		t_test.Errorf("expected member count 3, got %d", fetchedCensus.MemberCount)
+		t.Errorf("expected member count 3, got %d", fetchedCensus.MemberCount)
 	}
 
 	fetchedClub, _ = db.GetClubByKey(ctx, club.GetKey())
 	if fetchedClub.Census[0].Count != 3 {
-		t_test.Errorf("expected updated club summary count 3, got %d", fetchedClub.Census[0].Count)
+		t.Errorf("expected updated club summary count 3, got %d", fetchedClub.Census[0].Count)
 	}
 }

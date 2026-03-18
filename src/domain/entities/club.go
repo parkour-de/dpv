@@ -39,7 +39,7 @@ func (c *Club) GetMembership() *Membership {
 	return &c.Membership
 }
 
-func (c *Club) FilteredResponse(isAdmin bool) interface{} {
+func (c *Club) FilteredResponse() interface{} {
 	var resp Club
 	resp.Key = c.Key
 	resp.Created = c.Created
@@ -64,7 +64,7 @@ func (c *Club) FilteredResponse(isAdmin bool) interface{} {
 	resp.Vorstand = c.Vorstand
 	resp.Census = c.Census
 
-	resp.Membership = c.Membership.FilteredResponse(isAdmin)
+	resp.Membership = c.Membership.FilteredResponse()
 
 	return &resp
 }

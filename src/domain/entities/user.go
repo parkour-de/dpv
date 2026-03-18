@@ -24,7 +24,7 @@ func (u *User) GetMembership() *Membership {
 	return &u.Membership
 }
 
-func (u *User) FilteredResponse(isAdmin bool) interface{} {
+func (u *User) FilteredResponse() interface{} {
 	resp := &User{
 		Entity: Entity{
 			Key:      u.Key,
@@ -35,12 +35,11 @@ func (u *User) FilteredResponse(isAdmin bool) interface{} {
 		LastName:    u.LastName,
 		FirstName:   u.FirstName,
 		Roles:       u.Roles,
-		Membership:  u.Membership.FilteredResponse(isAdmin),
+		Membership:  u.Membership.FilteredResponse(),
 		Language:    u.Language,
 		YourClub:    u.YourClub,
 		DateOfBirth: u.DateOfBirth,
 	}
-	// We retain EmailVerified or other non-secret stuff, but intentionally drop PasswordHash
 	return resp
 }
 

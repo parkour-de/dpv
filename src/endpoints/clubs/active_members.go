@@ -95,7 +95,7 @@ func (h *ClubHandler) GetActiveMembers(w http.ResponseWriter, r *http.Request, p
 				// Exact match: First Name + Last Name + DOB
 				if userNormFirst == censusNormFirst && userNormLast == censusNormLast && userDOB == censusDOB {
 					resp.ExactMatches = append(resp.ExactMatches, activeMemberMatch{
-						User:           u.FilteredResponse(true),
+						User:           u.FilteredResponse(),
 						Source:         "census_and_profile",
 						CensusName:     cEntry.Firstname + " " + cEntry.Lastname,
 						CensusDOB:      cEntry.BirthDate,
@@ -115,7 +115,7 @@ func (h *ClubHandler) GetActiveMembers(w http.ResponseWriter, r *http.Request, p
 				// Partial match: First Name + Last Name (but different DOB)
 				if userNormFirst == censusNormFirst && userNormLast == censusNormLast {
 					resp.PartialMatches = append(resp.PartialMatches, activeMemberMatch{
-						User:           u.FilteredResponse(true),
+						User:           u.FilteredResponse(),
 						Source:         "census_and_profile",
 						CensusName:     cEntry.Firstname + " " + cEntry.Lastname,
 						CensusDOB:      cEntry.BirthDate,
@@ -133,7 +133,7 @@ func (h *ClubHandler) GetActiveMembers(w http.ResponseWriter, r *http.Request, p
 		if !matchFound {
 			// They wrote "Dein Verein" but didn't match anything in the census
 			resp.PartialMatches = append(resp.PartialMatches, activeMemberMatch{
-				User:           u.FilteredResponse(true),
+				User:           u.FilteredResponse(),
 				Source:         "profile_only",
 				PortalName:     u.FirstName + " " + u.LastName,
 				PortalDOB:      u.DateOfBirth,

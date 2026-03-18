@@ -46,8 +46,8 @@ func (l *AuditLogger) Log(ctx context.Context, action AuditAction, entityType st
 
 	// Scrub sensitive data conditionally from the memory
 	loggableItem := item
-	if filterable, ok := item.(entities.Filterable); ok {
-		loggableItem = filterable.FilteredResponse(false)
+	if filterable, ok := item.(entities.FilteredResponder); ok {
+		loggableItem = filterable.FilteredResponse()
 	}
 
 	entry := AuditEntry{

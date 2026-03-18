@@ -33,7 +33,7 @@ type CreateClubRequest struct {
 func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -69,14 +69,13 @@ func (h *ClubHandler) Create(w http.ResponseWriter, r *http.Request, _ httproute
 		return
 	}
 
-	isAdmin := api.IsAdmin(*user)
-	api.SuccessJson(w, r, clubEntity.FilteredResponse(isAdmin))
+	api.SuccessJson(w, r, clubEntity.FilteredResponse())
 }
 
 func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -87,13 +86,13 @@ func (h *ClubHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse())
 }
 
 func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -117,13 +116,13 @@ func (h *ClubHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	club, _ := h.Service.GetClub(r.Context(), key, user)
-	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse())
 }
 
 func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -140,7 +139,7 @@ func (h *ClubHandler) Delete(w http.ResponseWriter, r *http.Request, ps httprout
 func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -166,13 +165,13 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 	// Return updated club
 	club, _ := h.Service.GetClub(r.Context(), key, user)
-	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse())
 }
 
 func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -186,13 +185,13 @@ func (h *ClubHandler) RemoveOwner(w http.ResponseWriter, r *http.Request, ps htt
 	}
 	// Return updated club
 	club, _ := h.Service.GetClub(r.Context(), key, user)
-	api.SuccessJson(w, r, club.FilteredResponse(api.IsAdmin(*user)))
+	api.SuccessJson(w, r, club.FilteredResponse())
 }
 
 func (h *ClubHandler) Search(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, err := api.GetUserFromContext(r)
+	_, err := api.GetUserFromContext(r)
 	if err != nil {
-		api.Error(w, r, t.Errorf("failed to get user from context: %w", err), http.StatusUnauthorized)
+		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -203,10 +202,9 @@ func (h *ClubHandler) Search(w http.ResponseWriter, r *http.Request, _ httproute
 		return
 	}
 
-	isAdmin := api.IsAdmin(*user)
 	var filtered []entities.Club
 	for _, c := range clubs {
-		filtered = append(filtered, *(c.FilteredResponse(isAdmin).(*entities.Club)))
+		filtered = append(filtered, *(c.FilteredResponse().(*entities.Club)))
 	}
 
 	api.SuccessJson(w, r, filtered)

@@ -79,7 +79,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request, _ httprou
 		api.Error(w, r, t.Errorf("could not create user: %w", err), http.StatusInternalServerError)
 		return
 	}
-	resp := userEntity.FilteredResponse(false)
+	resp := userEntity.FilteredResponse()
 	api.SuccessJson(w, r, resp)
 }
 
@@ -90,7 +90,7 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		api.Error(w, r, err, http.StatusUnauthorized)
 		return
 	}
-	resp := userEntity.FilteredResponse(false)
+	resp := userEntity.FilteredResponse()
 	api.SuccessJson(w, r, resp)
 }
 
@@ -114,7 +114,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.
 		api.Error(w, r, t.Errorf("user not found"), http.StatusNotFound)
 		return
 	}
-	api.SuccessJson(w, r, userEntityFetched.FilteredResponse(isAdmin))
+	api.SuccessJson(w, r, userEntityFetched.FilteredResponse())
 }
 
 // List returns users dynamically filtered for admin
@@ -137,7 +137,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 	var resp []*entities.User
 	for _, u := range users {
 		userCopy := u
-		resp = append(resp, userCopy.FilteredResponse(false).(*entities.User))
+		resp = append(resp, userCopy.FilteredResponse().(*entities.User))
 	}
 	if resp == nil {
 		resp = make([]*entities.User, 0)
@@ -185,7 +185,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	api.SuccessJson(w, r, updatedUser.FilteredResponse(isAdmin))
+	api.SuccessJson(w, r, updatedUser.FilteredResponse())
 }
 
 // RequestEmailValidation - requires authentication
@@ -423,5 +423,5 @@ func (h *UserHandler) UpdateRoles(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	api.SuccessJson(w, r, updatedUser.FilteredResponse(true))
+	api.SuccessJson(w, r, updatedUser.FilteredResponse())
 }
