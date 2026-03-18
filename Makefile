@@ -1,5 +1,6 @@
 # Variables
 IMAGE_NAME=dpv
+PRODUCTION_IMAGE=ghcr.io/parkour-de/dpv:latest
 CONTAINER_NAME=dpv_container
 PORT=8080
 OUT_DIR := ./bin
@@ -32,6 +33,12 @@ docker-run: ## Run the container
 
 docker-stop: ## Stop the container
 	docker stop $(CONTAINER_NAME) && docker rm $(CONTAINER_NAME)
+
+docker-production: ## Run the container in production
+	mkdir -p /srv/dpv/documents
+	docker pull $(PRODUCTION_IMAGE)
+	-docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
+	docker run -d --network dpv-network -p $(PORT):$(PORT) -e DB_HOST=arango-db -v /srv/dpv/cfg:/app/cfg -v /srv/dpv/documents:/app/documents --name $(CONTAINER_NAME) $(PRODUCTION_IMAGE)
 
 raml: ## Update raml documentation
 	(npm list -g raml2html && npm list -g oas-raml-converter-cli) || npm i -g raml2html oas-raml-converter-cli

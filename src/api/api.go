@@ -32,15 +32,35 @@ func Authenticated(r *http.Request, db *graph.Db) (*entities.User, error) {
 	if !ok {
 		return nil, t.Errorf("authorization header missing or not using Basic Auth")
 	}
+
+	ip := getClientIP(r)
+	if err := checkRateLimit(ip, email); err != nil {
+		return nil, err
+	}
+
 	users, err := db.GetUsersByEmail(r.Context(), email)
 	if err != nil || len(users) != 1 {
+		recordAuthFailure(ip, email)
 		return nil, t.Errorf("user not found or multiple users returned")
 	}
 	user := users[0]
+
+	cacheKey := buildAuthCacheKey(email, password, user.PasswordHash)
+
+	if checkAuthCache(cacheKey) {
+		recordAuthSuccessEmail(email)
+		return &user, nil
+	}
+
 	authenticated := security.CheckPasswordHash(user.PasswordHash, password)
 	if !authenticated {
+		recordAuthFailure(ip, email)
 		return nil, t.Errorf("invalid credentials")
 	}
+
+	recordAuthSuccessEmail(email)
+	putAuthCache(cacheKey)
+
 	return &user, nil
 }
 
