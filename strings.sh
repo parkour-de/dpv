@@ -7,7 +7,7 @@ grep -rho -E '\bt\.Errorf\("([^"\\]|\\.)*"' ./src --exclude='*_test.go' \
   | sed -E 's/\\"/"/g' \
   | sort | uniq > keys.txt
 
-if [ ! -f "keys.txt" ]; then
+if [[ ! -f "keys.txt" ]]; then
   echo "Error: keys.txt not found!"
   exit 1
 fi
@@ -15,7 +15,7 @@ fi
 for LANG in $LANGUAGES; do
   FILE="cfg/strings_${LANG}.ini"
   
-  if [ ! -f "$FILE" ]; then
+  if [[ ! -f "$FILE" ]]; then
     awk '{print $0"="}' "keys.txt" | sort > "$FILE"
     echo "Created $FILE with all keys."
   else

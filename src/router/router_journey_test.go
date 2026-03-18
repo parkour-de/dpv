@@ -16,7 +16,11 @@ func TestHierarchyJourney(t *testing.T) {
 
 	// 1. Register main user and admin
 	regBody := `{"email":"admin@hierarchy.local","password":"UserPass123!","firstname":"Admin","lastname":"Owner","consent_privacy":true}`
-	resp, _ := http.Post("http://localhost:8085/dpv/users", "application/json", strings.NewReader(regBody))
+	resp, err := http.Post("http://localhost:8085/dpv/users", "application/json", strings.NewReader(regBody))
+	if err != nil {
+		t.Fatalf("Admin registration failed: %v", err)
+	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Admin registration failed: %d", resp.StatusCode)
 	}
@@ -24,11 +28,18 @@ func TestHierarchyJourney(t *testing.T) {
 	// 2. We need 3 clubs using the POST /dpv/clubs endpoint
 	createClub := func(name string) string {
 		body := fmt.Sprintf(`{"name":"%s","legal_form":"e.V."}`, name)
-		req, _ := http.NewRequest("POST", "http://localhost:8085/dpv/clubs", strings.NewReader(body))
+		req, err := http.NewRequest("POST", "http://localhost:8085/dpv/clubs", strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
 		req.SetBasicAuth("admin@hierarchy.local", "UserPass123!")
 		res, err := client.Do(req)
-		if err != nil || res.StatusCode != http.StatusOK {
-			t.Fatalf("Club creation failed for %s", name)
+		if err != nil {
+			t.Fatalf("Club creation request failed for %s: %v", name, err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("Club creation failed for %s: %d", name, res.StatusCode)
 		}
 		b, _ := io.ReadAll(res.Body)
 		keyStart := strings.Index(string(b), `"_key":"`) + 8
@@ -43,9 +54,16 @@ func TestHierarchyJourney(t *testing.T) {
 	// 3. Update B to have A as parent (PATCH /dpv/club/:key)
 	updateParent := func(childKey, parentKey string) int {
 		body := fmt.Sprintf(`{"parent_key":"%s"}`, parentKey)
-		req, _ := http.NewRequest("PATCH", fmt.Sprintf("http://localhost:8085/dpv/club/%s", childKey), strings.NewReader(body))
+		req, err := http.NewRequest("PATCH", fmt.Sprintf("http://localhost:8085/dpv/club/%s", childKey), strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("Failed to create update request: %v", err)
+		}
 		req.SetBasicAuth("admin@hierarchy.local", "UserPass123!")
-		res, _ := client.Do(req)
+		res, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("Update parent request failed: %v", err)
+		}
+		defer res.Body.Close()
 		return res.StatusCode
 	}
 
@@ -71,10 +89,17 @@ func TestUserMembershipJourney(t *testing.T) {
 
 	// Register 2 users: one standard, one admin
 	regUser := `{"email":"member@journey.local","password":"UserPass123!","firstname":"User","lastname":"Member","consent_privacy":true}`
-	http.Post("http://localhost:8086/dpv/users", "application/json", strings.NewReader(regUser))
+	resp1, err := http.Post("http://localhost:8086/dpv/users", "application/json", strings.NewReader(regUser))
+	if err == nil {
+		resp1.Body.Close()
+	}
 
 	regAdmin := `{"email":"admin@journey.local","password":"AdminPass123!","firstname":"Admin","lastname":"Super","consent_privacy":true}`
-	resp, _ := http.Post("http://localhost:8086/dpv/users", "application/json", strings.NewReader(regAdmin))
+	resp, err := http.Post("http://localhost:8086/dpv/users", "application/json", strings.NewReader(regAdmin))
+	if err != nil {
+		t.Fatalf("Admin registration failed: %v", err)
+	}
+	defer resp.Body.Close()
 
 	// Get admin user key
 	b, _ := io.ReadAll(resp.Body)
@@ -90,7 +115,11 @@ func TestUserMembershipJourney(t *testing.T) {
 	// User Applies
 	req, _ := http.NewRequest("POST", "http://localhost:8086/dpv/users/me/apply", strings.NewReader(`{"consent_privacy":true,"consent_accuracy":true,"consent_statutes":true,"consent_finances":true}`))
 	req.SetBasicAuth("member@journey.local", "UserPass123!")
-	res, _ := client.Do(req)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("User apply request failed: %v", err)
+	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("User apply failed: %d", res.StatusCode)
 	}
@@ -98,7 +127,11 @@ func TestUserMembershipJourney(t *testing.T) {
 	// User checks me
 	req, _ = http.NewRequest("GET", "http://localhost:8086/dpv/users/me", nil)
 	req.SetBasicAuth("member@journey.local", "UserPass123!")
-	res, _ = client.Do(req)
+	res, err = client.Do(req)
+	if err != nil {
+		t.Fatalf("Check me request failed: %v", err)
+	}
+	defer res.Body.Close()
 	b, _ = io.ReadAll(res.Body)
 	if !strings.Contains(string(b), `"status":"requested"`) {
 		t.Errorf("Expected requested status, got: %s", string(b))
@@ -107,7 +140,11 @@ func TestUserMembershipJourney(t *testing.T) {
 	// User Cancels self
 	req, _ = http.NewRequest("POST", "http://localhost:8086/dpv/users/me/cancel", strings.NewReader(`{"end_date": 2000}`))
 	req.SetBasicAuth("member@journey.local", "UserPass123!")
-	res, _ = client.Do(req)
+	res, err = client.Do(req)
+	if err != nil {
+		t.Fatalf("User self-cancel request failed: %v", err)
+	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("User self-cancel failed: %d", res.StatusCode)
 	}
@@ -115,7 +152,11 @@ func TestUserMembershipJourney(t *testing.T) {
 	// Verify cancellation
 	req, _ = http.NewRequest("GET", "http://localhost:8086/dpv/users/me", nil)
 	req.SetBasicAuth("member@journey.local", "UserPass123!")
-	res, _ = client.Do(req)
+	res, err = client.Do(req)
+	if err != nil {
+		t.Fatalf("Verify cancellation request failed: %v", err)
+	}
+	defer res.Body.Close()
 	b, _ = io.ReadAll(res.Body)
 	if !strings.Contains(string(b), `"status":"inactive"`) && !strings.Contains(string(b), `"status":"cancelled"`) {
 		// Cancel from requested -> immediately inactive/reset
