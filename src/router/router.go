@@ -139,7 +139,7 @@ func NewServer(configPath string, test bool) *http.Server {
 		log.Printf("defaulting to port %s", port)
 	}
 
-	addr := "localhost:" + port
+	addr := ":" + port
 	return &http.Server{
 		Addr:    addr,
 		Handler: r,

@@ -1,0 +1,20 @@
+# Ignore local configuration
+cfg/config.yml
+config.yml
+
+# Ignore binary outputs
+bin/
+membership
+
+# Ignore local documents
+documents/
+
+# Ignore Go build artifacts
+vendor/
+
+# Ignore DS_Store
+.DS_Store
+
+# Ignore git
+.git
+.github

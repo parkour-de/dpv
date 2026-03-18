@@ -16,7 +16,7 @@ type TranslatableError struct {
 // Error implements the standard error interface with a fallback (e.g. English).
 func (e *TranslatableError) Error() string {
 	// Fallback logic: raw key + formatted args
-	return fmt.Sprintf(e.Key, e.Args...)
+	return Translate(e, make(map[string]string))
 }
 
 // Unwrap allows standard errors.Is/As checks to work by unwrapping the *first* error found in Args.

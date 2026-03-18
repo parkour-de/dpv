@@ -24,7 +24,7 @@ This API serves as the backbone for a comprehensive membership management platfo
 
 ## Technology Stack
 
-- **Language**: Go 1.25
+- **Language**: Go 1.26
 - **Router**: [httprouter](https://github.com/julienschmidt/httprouter) - Fast HTTP routing
 - **Database**: [ArangoDB](https://arangodb.com/) - Multi-model database (documents + graphs)
 - **Authentication**: HTTP Basic Auth with bcrypt password hashing
@@ -56,7 +56,7 @@ src/
 
 ## Prerequisites
 
-- **Go**: Version 1.25 or higher
+- **Go**: Version 1.26 or higher
 - **ArangoDB**: Version 3.x (local or remote instance)
 - **Make**: For build automation
 

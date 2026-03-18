@@ -26,7 +26,9 @@ docker-build: ## Build the container image
 	docker build -t $(IMAGE_NAME) --build-arg VERSION=$$(git rev-list --count main) .
 
 docker-run: ## Run the container
-	docker run -d -p $(PORT):$(PORT) -v $(PWD)/cfg:/app/cfg --name $(CONTAINER_NAME) $(IMAGE_NAME)
+	mkdir -p $(PWD)/documents
+	-docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
+	docker run -d -p $(PORT):$(PORT) -e DB_HOST=host.docker.internal -v $(PWD)/cfg:/app/cfg -v $(PWD)/documents:/app/documents --name $(CONTAINER_NAME) $(IMAGE_NAME)
 
 docker-stop: ## Stop the container
 	docker stop $(CONTAINER_NAME) && docker rm $(CONTAINER_NAME)

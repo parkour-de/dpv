@@ -71,6 +71,12 @@ func NewConfig(configPath string) (*Config, error) {
 	if err := d.Decode(&config); err != nil {
 		return nil, fmt.Errorf("could not decode config file: %w", err)
 	}
+
+	// Environment variable overrides
+	if host := os.Getenv("DB_HOST"); host != "" {
+		config.DB.Host = host
+	}
+
 	config.Path = filepath.Dir(configPath) + "/"
 	return config, nil
 }
