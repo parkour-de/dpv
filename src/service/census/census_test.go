@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestParseAndValidateCSV(t_test *testing.T) {
+func TestParseAndValidateCSV(t *testing.T) {
 	tests := []struct {
 		name    string
 		csv     string
@@ -98,28 +98,28 @@ func TestParseAndValidateCSV(t_test *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t_test.Run(tt.name, func(t_test *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			s := &Service{}
 			reader := strings.NewReader(tt.csv)
 			result, err := s.ParseAndValidateCSV(reader, tt.year)
 
 			if (err != nil) != tt.wantErr {
-				t_test.Errorf("ParseAndValidateCSV() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ParseAndValidateCSV() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr && !strings.Contains(err.Error(), tt.errMsg) {
-				t_test.Errorf("ParseAndValidateCSV() error = %v, errMsg %v", err, tt.errMsg)
+				t.Errorf("ParseAndValidateCSV() error = %v, errMsg %v", err, tt.errMsg)
 			}
 			if !tt.wantErr {
-				validateTestResult(t_test, result, tt.year, tt.csv)
+				validateTestResult(t, result, tt.year, tt.csv)
 			}
 		})
 	}
 }
 
-func validateTestResult(t_test *testing.T, result *entities.Census, expectedYear int, csvContent string) {
+func validateTestResult(t *testing.T, result *entities.Census, expectedYear int, csvContent string) {
 	if result.Year != expectedYear {
-		t_test.Errorf("expected year %d, got %d", expectedYear, result.Year)
+		t.Errorf("expected year %d, got %d", expectedYear, result.Year)
 	}
 
 	lines := strings.Split(strings.TrimSpace(csvContent), "\n")
@@ -136,6 +136,6 @@ func validateTestResult(t_test *testing.T, result *entities.Census, expectedYear
 	}
 
 	if result.MemberCount != expectedCount {
-		t_test.Errorf("expected member count %d, got %d", expectedCount, result.MemberCount)
+		t.Errorf("expected member count %d, got %d", expectedCount, result.MemberCount)
 	}
 }
