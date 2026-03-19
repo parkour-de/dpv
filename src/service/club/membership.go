@@ -18,34 +18,12 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 		return t.Errorf("failed to load club for membership application: %w", err)
 	}
 
-	validateFn := func() error {
-		if club.ParentKey != "" {
-			return t.Errorf("club is a subsidiary and cannot hold independent membership")
-		}
-
-		hasAuthRep := false
-		for _, v := range club.Vorstand {
-			if v.AuthorizedRepresentative {
-				hasAuthRep = true
-				break
-			}
-		}
-		if !hasAuthRep && len(club.Vorstand) > 0 {
-			return t.Errorf("at least one manager must be an authorized representative (§26 BGB)")
-		}
-
-		currentYear := time.Now().Year()
-		if _, err := s.DB.GetCensus(ctx, key, currentYear); err != nil {
-			return t.Errorf("membership application requires a census for the current year")
-		}
-
-		return nil
-	}
-
 	if memType == "" {
 		memType = "ordinary"
 	}
-	if err := membership.Apply(ctx, club, beginDate, memType, fee, validateFn); err != nil {
+	if err := membership.Apply(ctx, club, beginDate, memType, fee, func() error {
+		return s.validateMembershipApplication(ctx, club)
+	}); err != nil {
 		return err
 	}
 
@@ -123,5 +101,28 @@ func (s *Service) Cancel(ctx context.Context, key string, user *entities.User, e
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club for membership cancellation: %w", err)
 	}
+	return nil
+}
+func (s *Service) validateMembershipApplication(ctx context.Context, club *entities.Club) error {
+	if club.ParentKey != "" {
+		return t.Errorf("club is a subsidiary and cannot hold independent membership")
+	}
+
+	hasAuthRep := false
+	for _, v := range club.Vorstand {
+		if v.AuthorizedRepresentative {
+			hasAuthRep = true
+			break
+		}
+	}
+	if !hasAuthRep && len(club.Vorstand) > 0 {
+		return t.Errorf("at least one manager must be an authorized representative (§26 BGB)")
+	}
+
+	currentYear := time.Now().Year()
+	if _, err := s.DB.GetCensus(ctx, club.GetKey(), currentYear); err != nil {
+		return t.Errorf("membership application requires a census for the current year")
+	}
+
 	return nil
 }

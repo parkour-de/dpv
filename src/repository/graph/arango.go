@@ -127,7 +127,6 @@ func NewEntityManager[T Entity](db arangodb.Database, name string, edges bool, c
 }
 
 func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
-	var err error
 	config, err := dpv.NewConfig(configPath)
 	if err != nil {
 		return nil, nil, t.Errorf("could not initialise config instance: %w", err)
@@ -144,13 +143,10 @@ func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
 		dbname = "dpv"
 	}
 	if test {
-		token, err := security.MakeNonce()
+		dbname, err = setupTestDatabase(dbname, config)
 		if err != nil {
-			return nil, nil, t.Errorf("could not create random token for test database: %w", err)
+			return nil, nil, err
 		}
-		dbname = "test-" + dbname + "-" + token
-		log.Printf("Using database %s\n", dbname)
-		config.Email.SMTPHost = ""
 	}
 	database, err := GetOrCreateDatabase(c, dbname, config)
 	if err != nil {
@@ -161,18 +157,35 @@ func Init(configPath string, test bool) (*Db, *dpv.Config, error) {
 		return nil, nil, t.Errorf("could not initialise database: %w", err)
 	}
 	if !test {
-		collection, err := db.Database.GetCollection(context.Background(), "users", &arangodb.GetCollectionOptions{SkipExistCheck: false})
-		if err != nil {
-			return nil, nil, t.Errorf("could not get users collection: %w", err)
-		}
-		count, err := collection.Count(context.Background())
-		if err != nil {
-			return nil, nil, t.Errorf("could not count users: %w", err)
-		}
-		if count == 0 {
-			log.Println("Creating sample data")
-			// SampleData(db)
-		}
+		ensureSampleData(db)
 	}
 	return db, config, err
+}
+
+func setupTestDatabase(baseName string, config *dpv.Config) (string, error) {
+	token, err := security.MakeNonce()
+	if err != nil {
+		return "", t.Errorf("could not create random token for test database: %w", err)
+	}
+	dbname := "test-" + baseName + "-" + token
+	log.Printf("Using database %s\n", dbname)
+	config.Email.SMTPHost = ""
+	return dbname, nil
+}
+
+func ensureSampleData(db *Db) {
+	collection, err := db.Database.GetCollection(context.Background(), "users", &arangodb.GetCollectionOptions{SkipExistCheck: false})
+	if err != nil {
+		log.Printf("Warning: could not get users collection: %v", err)
+		return
+	}
+	count, err := collection.Count(context.Background())
+	if err != nil {
+		log.Printf("Warning: could not count users: %v", err)
+		return
+	}
+	if count == 0 {
+		log.Println("Creating sample data")
+		// SampleData(db)
+	}
 }

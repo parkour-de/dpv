@@ -93,77 +93,93 @@ func getClientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
+func sweepRateLimits(now time.Time) {
+	lastSweep := rlLastSweep.Load()
+	if now.Unix()-lastSweep <= 1200 {
+		return
+	}
+	if rlLastSweep.CompareAndSwap(lastSweep, now.Unix()) {
+		rlMap.Range(func(k, v interface{}) bool {
+			state := v.(*rlState)
+			state.mu.Lock()
+			deletionTime := state.LockoutEnd.Add(time.Duration(state.Failures) * time.Hour)
+			if now.After(deletionTime) {
+				state.mu.Unlock()
+				rlMap.Delete(k)
+			} else {
+				state.mu.Unlock()
+			}
+			return true
+		})
+	}
+}
+
+func checkSingleRateLimit(k string, now time.Time) error {
+	val, ok := rlMap.Load(k)
+	if !ok {
+		return nil
+	}
+	state := val.(*rlState)
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	if state.Failures >= 5 && now.Before(state.LockoutEnd) {
+		waitMinutes := int(state.LockoutEnd.Sub(now).Minutes()) + 1
+		if strings.HasPrefix(k, "ip:") {
+			return t.Errorf("too many failed login attempts from this IP address, try again in %d minutes", waitMinutes)
+		}
+		return t.Errorf("too many failed login attempts for this user, try again in %d minutes", waitMinutes)
+	}
+	return nil
+}
+
 func checkRateLimit(ip, email string) error {
 	now := time.Now()
-
-	lastSweep := rlLastSweep.Load()
-	if now.Unix()-lastSweep > 1200 {
-		if rlLastSweep.CompareAndSwap(lastSweep, now.Unix()) {
-			rlMap.Range(func(k, v interface{}) bool {
-				state := v.(*rlState)
-				state.mu.Lock()
-				deletionTime := state.LockoutEnd.Add(time.Duration(state.Failures) * time.Hour)
-				if now.After(deletionTime) {
-					state.mu.Unlock()
-					rlMap.Delete(k)
-				} else {
-					state.mu.Unlock()
-				}
-				return true
-			})
-		}
-	}
+	sweepRateLimits(now)
 
 	keys := []string{"ip:" + ip, "usr:" + email}
 	for _, k := range keys {
-		if val, ok := rlMap.Load(k); ok {
-			state := val.(*rlState)
-			state.mu.Lock()
-			if state.Failures >= 5 && now.Before(state.LockoutEnd) {
-				waitMinutes := int(state.LockoutEnd.Sub(now).Minutes()) + 1
-				state.mu.Unlock()
-				if strings.HasPrefix(k, "ip:") {
-					return t.Errorf("too many failed login attempts from this IP address, try again in %d minutes", waitMinutes)
-				}
-				return t.Errorf("too many failed login attempts for this user, try again in %d minutes", waitMinutes)
-			}
-			state.mu.Unlock()
+		if err := checkSingleRateLimit(k, now); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
+func recordSingleAuthFailure(k string, now time.Time) {
+	var state *rlState
+	val, ok := rlMap.Load(k)
+	if ok {
+		state = val.(*rlState)
+	} else {
+		newState := &rlState{}
+		actual, _ := rlMap.LoadOrStore(k, newState)
+		state = actual.(*rlState)
+	}
+
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	state.Failures++
+	if state.Failures >= 5 && state.Failures%5 == 0 {
+		exp := (state.Failures / 5) - 1
+		if exp > 10 {
+			exp = 10
+		}
+		penalty := time.Duration(1<<exp) * 10 * time.Minute
+
+		if state.LockoutEnd.Before(now) {
+			state.LockoutEnd = now.Add(penalty)
+		} else {
+			state.LockoutEnd = state.LockoutEnd.Add(penalty)
+		}
+	}
+}
+
 func recordAuthFailure(ip, email string) {
 	now := time.Now()
-
 	keys := []string{"ip:" + ip, "usr:" + email}
 	for _, k := range keys {
-		var state *rlState
-		val, ok := rlMap.Load(k)
-		if ok {
-			state = val.(*rlState)
-		} else {
-			newState := &rlState{}
-			actual, _ := rlMap.LoadOrStore(k, newState)
-			state = actual.(*rlState)
-		}
-
-		state.mu.Lock()
-		state.Failures++
-		if state.Failures >= 5 && state.Failures%5 == 0 {
-			exp := (state.Failures / 5) - 1
-			if exp > 10 {
-				exp = 10
-			}
-			penalty := time.Duration(1<<exp) * 10 * time.Minute
-
-			if state.LockoutEnd.Before(now) {
-				state.LockoutEnd = now.Add(penalty)
-			} else {
-				state.LockoutEnd = state.LockoutEnd.Add(penalty)
-			}
-		}
-		state.mu.Unlock()
+		recordSingleAuthFailure(k, now)
 	}
 }
 

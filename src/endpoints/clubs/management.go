@@ -1,6 +1,7 @@
 package clubs
 
 import (
+	"context"
 	"dpv/dpv/src/api"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/graph"
@@ -18,44 +19,14 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 		return
 	}
 
-	isAdmin := api.IsAdmin(*user)
 	status := r.URL.Query().Get("status")
 	skip, _ := api.ParseInt(r.URL.Query().Get("skip"))
 	limit, _ := api.ParseInt(r.URL.Query().Get("limit"))
 
-	var clubs []entities.Club
-	var err error
-
-	if isAdmin {
-		options := graph.ClubQueryOptions{
-			Skip:   skip,
-			Limit:  limit,
-			Status: status,
-		}
-		clubs, err = h.Service.GetAllClubs(r.Context(), options)
-	} else {
-		// Non-admins only see clubs they administer
-		clubs, err = h.Service.ListClubs(r.Context(), user.Key)
-		// Basic filtering for non-admins if status is provided
-		if status != "" {
-			var filtered []entities.Club
-			for _, c := range clubs {
-				if c.Membership.Status == status {
-					filtered = append(filtered, c)
-				}
-			}
-			clubs = filtered
-		}
-	}
-
+	clubs, err := h.getClubsForUser(r.Context(), user, status, skip, limit)
 	if err != nil {
 		api.Error(w, r, err, http.StatusInternalServerError)
 		return
-	}
-
-	var resp []entities.Club
-	for _, c := range clubs {
-		resp = append(resp, *(c.FilteredResponse().(*entities.Club)))
 	}
 
 	if r.Header.Get("Accept") == "text/csv" {
@@ -63,5 +34,46 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 		return
 	}
 
+	resp := h.buildFilteredClubResponse(clubs)
 	api.SuccessJson(w, r, resp)
+}
+
+func (h *ClubHandler) getClubsForUser(ctx context.Context, user *entities.User, status string, skip, limit int) ([]entities.Club, error) {
+	if api.IsAdmin(*user) {
+		options := graph.ClubQueryOptions{
+			Skip:   skip,
+			Limit:  limit,
+			Status: status,
+		}
+		return h.Service.GetAllClubs(ctx, options)
+	}
+
+	// Non-admins only see clubs they administer
+	clubs, err := h.Service.ListClubs(ctx, user.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	if status != "" {
+		return h.filterClubsByStatus(clubs, status), nil
+	}
+	return clubs, nil
+}
+
+func (h *ClubHandler) filterClubsByStatus(clubs []entities.Club, status string) []entities.Club {
+	var filtered []entities.Club
+	for _, c := range clubs {
+		if c.Membership.Status == status {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
+}
+
+func (h *ClubHandler) buildFilteredClubResponse(clubs []entities.Club) []entities.Club {
+	var resp []entities.Club
+	for _, c := range clubs {
+		resp = append(resp, *(c.FilteredResponse().(*entities.Club)))
+	}
+	return resp
 }

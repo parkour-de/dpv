@@ -2,6 +2,7 @@ package clubs
 
 import (
 	"dpv/dpv/src/api"
+	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
 	"net/http"
 	"strings"
@@ -28,7 +29,6 @@ type activeMembersResponse struct {
 
 // GetActiveMembers strictly returns the users who have placed the club in their "your club" and pairs them against the census
 func (h *ClubHandler) GetActiveMembers(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	// Either an admin or an aktivadmin can view this list
 	_, err := api.RequireAktivAdmin(r, h.Service.DB)
 	if err != nil {
 		api.Error(w, r, err, http.StatusUnauthorized)
@@ -42,17 +42,10 @@ func (h *ClubHandler) GetActiveMembers(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	// 1. Fetch current year's census
 	currentYear := time.Now().Year()
 	census, _ := h.Service.DB.GetCensus(r.Context(), key, currentYear)
 
-	// 2. Fetch users who have selected this club
-	// If club name is long, might just use a significant part of it, but full name is fine for now
-	queryName := club.Name
-	if len(queryName) > 4 && strings.Contains(strings.ToLower(queryName), " e.v.") {
-		queryName = queryName[:len(queryName)-5]
-	}
-
+	queryName := h.getQueryName(club.Name)
 	users, err := h.Service.DB.GetUsersByYourClub(r.Context(), queryName)
 	if err != nil {
 		api.Error(w, r, t.Errorf("failed to search portal users: %w", err), http.StatusInternalServerError)
@@ -64,84 +57,83 @@ func (h *ClubHandler) GetActiveMembers(w http.ResponseWriter, r *http.Request, p
 		PartialMatches: make([]activeMemberMatch, 0),
 	}
 
-	// Helper to normalize strings for comparison
-	normalize := func(s string) string {
-		return strings.ToLower(strings.TrimSpace(s))
-	}
-
-	// Helper to format DOB from user Entity to match census "YYYY-MM-DD"
-	formatDOB := func(dob string) string {
-		if strings.Contains(dob, "T") {
-			return strings.Split(dob, "T")[0]
-		}
-		return dob
-	}
-
-	// Process all users found by "Dein Verein"
 	for _, u := range users {
-		userNormFirst := normalize(u.FirstName)
-		userNormLast := normalize(u.LastName)
-		userDOB := formatDOB(u.DateOfBirth)
-
-		matchFound := false
-
-		if census != nil {
-			for cIdx := range census.Members {
-				cEntry := &census.Members[cIdx]
-				censusNormFirst := normalize(cEntry.Firstname)
-				censusNormLast := normalize(cEntry.Lastname)
-				censusDOB := formatDOB(normalize(cEntry.BirthDate))
-
-				// Exact match: First Name + Last Name + DOB
-				if userNormFirst == censusNormFirst && userNormLast == censusNormLast && userDOB == censusDOB {
-					resp.ExactMatches = append(resp.ExactMatches, activeMemberMatch{
-						User:           u.FilteredResponse(),
-						Source:         "census_and_profile",
-						CensusName:     cEntry.Firstname + " " + cEntry.Lastname,
-						CensusDOB:      cEntry.BirthDate,
-						PortalName:     u.FirstName + " " + u.LastName,
-						PortalDOB:      u.DateOfBirth,
-						PortalYourClub: u.YourClub,
-						MatchType:      "exact",
-					})
-					matchFound = true
-					// Empty the entry so we don't match it again if we process censuses later
-					cEntry.Firstname = ""
-					cEntry.Lastname = ""
-					cEntry.BirthDate = ""
-					break
-				}
-
-				// Partial match: First Name + Last Name (but different DOB)
-				if userNormFirst == censusNormFirst && userNormLast == censusNormLast {
-					resp.PartialMatches = append(resp.PartialMatches, activeMemberMatch{
-						User:           u.FilteredResponse(),
-						Source:         "census_and_profile",
-						CensusName:     cEntry.Firstname + " " + cEntry.Lastname,
-						CensusDOB:      cEntry.BirthDate,
-						PortalName:     u.FirstName + " " + u.LastName,
-						PortalDOB:      u.DateOfBirth,
-						PortalYourClub: u.YourClub,
-						MatchType:      "partial_name_match",
-					})
-					matchFound = true
-					break
-				}
-			}
-		}
-
-		if !matchFound {
-			// They wrote "Dein Verein" but didn't match anything in the census
-			resp.PartialMatches = append(resp.PartialMatches, activeMemberMatch{
-				User:           u.FilteredResponse(),
-				Source:         "profile_only",
-				PortalName:     u.FirstName + " " + u.LastName,
-				PortalDOB:      u.DateOfBirth,
-				PortalYourClub: u.YourClub,
-				MatchType:      "dein_verein_only",
-			})
+		match := h.findMatchInCensus(u, census)
+		if match.MatchType == "exact" {
+			resp.ExactMatches = append(resp.ExactMatches, match)
+		} else {
+			resp.PartialMatches = append(resp.PartialMatches, match)
 		}
 	}
 
 	api.SuccessJson(w, r, resp)
+}
+
+func (h *ClubHandler) getQueryName(clubName string) string {
+	if len(clubName) > 4 && strings.Contains(strings.ToLower(clubName), " e.v.") {
+		return clubName[:len(clubName)-5]
+	}
+	return clubName
+}
+
+func (h *ClubHandler) findMatchInCensus(u entities.User, census *entities.Census) activeMemberMatch {
+	userNormFirst := h.normalizeString(u.FirstName)
+	userNormLast := h.normalizeString(u.LastName)
+	userDOB := h.formatDOB(u.DateOfBirth)
+
+	if census != nil {
+		for cIdx := range census.Members {
+			cEntry := &census.Members[cIdx]
+			if cEntry.Firstname == "" && cEntry.Lastname == "" {
+				continue
+			}
+
+			censusNormFirst := h.normalizeString(cEntry.Firstname)
+			censusNormLast := h.normalizeString(cEntry.Lastname)
+			censusDOB := h.formatDOB(h.normalizeString(cEntry.BirthDate))
+
+			if userNormFirst == censusNormFirst && userNormLast == censusNormLast {
+				match := activeMemberMatch{
+					User:           u.FilteredResponse(),
+					Source:         "census_and_profile",
+					CensusName:     cEntry.Firstname + " " + cEntry.Lastname,
+					CensusDOB:      cEntry.BirthDate,
+					PortalName:     u.FirstName + " " + u.LastName,
+					PortalDOB:      u.DateOfBirth,
+					PortalYourClub: u.YourClub,
+				}
+
+				if userDOB == censusDOB {
+					match.MatchType = "exact"
+					cEntry.Firstname = ""
+					cEntry.Lastname = ""
+					cEntry.BirthDate = ""
+					return match
+				}
+
+				match.MatchType = "partial_name_match"
+				return match
+			}
+		}
+	}
+
+	return activeMemberMatch{
+		User:           u.FilteredResponse(),
+		Source:         "profile_only",
+		PortalName:     u.FirstName + " " + u.LastName,
+		PortalDOB:      u.DateOfBirth,
+		PortalYourClub: u.YourClub,
+		MatchType:      "dein_verein_only",
+	}
+}
+
+func (h *ClubHandler) normalizeString(s string) string {
+	return strings.ToLower(strings.TrimSpace(s))
+}
+
+func (h *ClubHandler) formatDOB(dob string) string {
+	if strings.Contains(dob, "T") {
+		return strings.Split(dob, "T")[0]
+	}
+	return dob
 }

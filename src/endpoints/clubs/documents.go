@@ -3,6 +3,8 @@ package clubs
 import (
 	"archive/zip"
 	"dpv/dpv/src/api"
+	"dpv/dpv/src/domain/entities"
+	"dpv/dpv/src/repository/storage"
 	"dpv/dpv/src/repository/t"
 	"fmt"
 	"io"
@@ -122,15 +124,10 @@ func (h *ClubHandler) DownloadAllDocuments(w http.ResponseWriter, r *http.Reques
 
 	key := ps.ByName("key")
 	if authorized, err := h.Service.IsAuthorized(r.Context(), user, key); err != nil || !authorized {
-		if err != nil {
-			api.Error(w, r, err, http.StatusInternalServerError)
-		} else {
-			api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
-		}
+		h.handleUnauthorized(w, r, err)
 		return
 	}
 
-	// List files
 	filesEntry, err := h.Service.Storage.ListDocuments("clubs", key)
 	if err != nil {
 		api.Error(w, r, t.Errorf("list documents failed: %w", err), http.StatusInternalServerError)
@@ -142,6 +139,18 @@ func (h *ClubHandler) DownloadAllDocuments(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	h.serveZip(w, r, key, user, filesEntry)
+}
+
+func (h *ClubHandler) handleUnauthorized(w http.ResponseWriter, r *http.Request, err error) {
+	if err != nil {
+		api.Error(w, r, err, http.StatusInternalServerError)
+	} else {
+		api.Error(w, r, t.Errorf("unauthorized to view documents for this club"), http.StatusForbidden)
+	}
+}
+
+func (h *ClubHandler) serveZip(w http.ResponseWriter, r *http.Request, key string, user *entities.User, filesEntry []storage.Document) {
 	club, _ := h.Service.GetClub(r.Context(), key, user)
 	sanitizedClubName := "documents"
 	if club != nil {
@@ -155,28 +164,28 @@ func (h *ClubHandler) DownloadAllDocuments(w http.ResponseWriter, r *http.Reques
 	defer zipWriter.Close()
 
 	for _, doc := range filesEntry {
-		path, err := h.Service.Storage.GetDocumentPath("clubs", key, doc.Name)
-		if err != nil {
-			continue // skip
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			continue
-		}
-
-		// Create zip entry
-		w, err := zipWriter.Create(doc.Name)
-		if err != nil {
-			f.Close()
-			continue
-		}
-		if _, err := io.Copy(w, f); err != nil {
-			f.Close()
-			continue
-		}
-		f.Close()
+		_ = h.addFileToZip(zipWriter, "clubs", key, doc.Name)
 	}
+}
+
+func (h *ClubHandler) addFileToZip(zw *zip.Writer, category, key, filename string) error {
+	path, err := h.Service.Storage.GetDocumentPath(category, key, filename)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w, err := zw.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(w, f)
+	return err
 }
 
 // DeleteDocument handles document deletion.

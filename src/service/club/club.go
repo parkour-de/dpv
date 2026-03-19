@@ -87,8 +87,28 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 		return t.Errorf("failed to load club for update: %w", err)
 	}
 
-	// Apply updates
-	// Note: Status, Contribution, Members, and Votes are restricted.
+	if err := s.applyClubUpdates(ctx, club, updates, user); err != nil {
+		return err
+	}
+
+	if err := s.DB.UpdateClub(ctx, club); err != nil {
+		return t.Errorf("failed to update club: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) applyClubUpdates(ctx context.Context, club *entities.Club, updates map[string]interface{}, user *entities.User) error {
+	s.applyBasicFieldUpdates(club, updates, user)
+
+	if parentKey, ok := updates["parent_key"].(string); ok {
+		if err := s.updateParentClub(ctx, club, parentKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) applyBasicFieldUpdates(club *entities.Club, updates map[string]interface{}, user *entities.User) {
 	if name, ok := updates["name"].(string); ok && name != "" {
 		club.Name = name
 	}
@@ -101,44 +121,14 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if cp, ok := updates["contact_person"].(string); ok {
 		club.ContactPerson = cp
 	}
-	if parentKey, ok := updates["parent_key"].(string); ok {
-		if parentKey != club.ParentKey {
-			if parentKey != "" {
-				if club.Membership.Status == "active" || club.Membership.Status == "requested" {
-					return t.Errorf("a club with an active or requested membership cannot become a subsidiary")
-				}
-				_, err := s.DB.GetClubByKey(ctx, parentKey)
-				if err != nil {
-					return t.Errorf("parent club not found: %w", err)
-				}
-				isCyclic, err := s.DB.IsCyclicSubsidiary(ctx, key, parentKey)
-				if err != nil {
-					return t.Errorf("failed to validate hierarchy: %w", err)
-				}
-				if isCyclic {
-					return t.Errorf("cannot set parent club: this would create a cyclic hierarchy")
-				}
-				if err := s.DB.SetParentClub(ctx, key, parentKey); err != nil {
-					return t.Errorf("failed to set parent club edge: %w", err)
-				}
-			} else {
-				if err := s.DB.RemoveParentClub(ctx, key); err != nil {
-					return t.Errorf("failed to remove parent club edge: %w", err)
-				}
-			}
-			club.ParentKey = parentKey
-		}
-	}
 	if iban, ok := updates["iban"].(string); ok {
 		club.Membership.IBAN = iban
 	}
 	if holder, ok := updates["account_holder"].(string); ok {
 		club.Membership.AccountHolder = holder
 	}
-	if sepam, ok := updates["sepa_mandate_number"].(string); ok {
-		if api.IsAdmin(*user) {
-			club.Membership.SEPAMandateNumber = sepam
-		}
+	if sepam, ok := updates["sepa_mandate_number"].(string); ok && api.IsAdmin(*user) {
+		club.Membership.SEPAMandateNumber = sepam
 	}
 	if addr, ok := updates["address"].(string); ok {
 		club.Membership.Address = addr
@@ -152,9 +142,46 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	if ev, ok := updates["exemptionValidity"].(string); ok {
 		club.ExemptionValidity = ev
 	}
+}
 
-	if err := s.DB.UpdateClub(ctx, club); err != nil {
-		return t.Errorf("failed to update club: %w", err)
+func (s *Service) updateParentClub(ctx context.Context, club *entities.Club, parentKey string) error {
+	if parentKey == club.ParentKey {
+		return nil
+	}
+
+	if parentKey != "" {
+		if err := s.validateNewParent(ctx, club, parentKey); err != nil {
+			return err
+		}
+		if err := s.DB.SetParentClub(ctx, club.GetKey(), parentKey); err != nil {
+			return t.Errorf("failed to set parent club edge: %w", err)
+		}
+	} else {
+		if err := s.DB.RemoveParentClub(ctx, club.GetKey()); err != nil {
+			return t.Errorf("failed to remove parent club edge: %w", err)
+		}
+	}
+
+	club.ParentKey = parentKey
+	return nil
+}
+
+func (s *Service) validateNewParent(ctx context.Context, club *entities.Club, parentKey string) error {
+	if club.Membership.Status == "active" || club.Membership.Status == "requested" {
+		return t.Errorf("a club with an active or requested membership cannot become a subsidiary")
+	}
+
+	_, err := s.DB.GetClubByKey(ctx, parentKey)
+	if err != nil {
+		return t.Errorf("parent club not found: %w", err)
+	}
+
+	isCyclic, err := s.DB.IsCyclicSubsidiary(ctx, club.GetKey(), parentKey)
+	if err != nil {
+		return t.Errorf("failed to validate hierarchy: %w", err)
+	}
+	if isCyclic {
+		return t.Errorf("cannot set parent club: this would create a cyclic hierarchy")
 	}
 	return nil
 }
