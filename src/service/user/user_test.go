@@ -20,7 +20,7 @@ func setupTestService(t *testing.T) *Service {
 	return NewService(db)
 }
 
-func TestCreateUser_Validation(t *testing.T) {
+func TestCreateUserValidation(t *testing.T) {
 	service := setupTestService(t)
 	ctx := context.Background()
 
@@ -49,7 +49,7 @@ func contains(s, substr string) bool {
 	return substr == "" || (s != "" && (len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && (s[:len(substr)] == substr || contains(s[1:], substr))))))
 }
 
-func TestCreateUser_DuplicateEmail(t *testing.T) {
+func TestCreateUserDuplicateEmail(t *testing.T) {
 	service := setupTestService(t)
 	ctx := context.Background()
 

@@ -75,7 +75,7 @@ func TestSaveDocument(t *testing.T) {
 	}
 }
 
-func TestSaveDocument_MkdirError(t *testing.T) {
+func TestSaveDocumentMkdirError(t *testing.T) {
 	// Use a path that cannot be created (e.g., a file where a directory should be)
 	tempFile, err := os.CreateTemp("", "mkdir-collision")
 	if err != nil {

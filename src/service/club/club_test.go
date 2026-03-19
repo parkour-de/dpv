@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestService_CreateClub(t *testing.T) {
+func TestServiceCreateClub(t *testing.T) {
 	db, _, err := graph.Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
@@ -52,7 +52,7 @@ func TestService_CreateClub(t *testing.T) {
 	}
 }
 
-func TestService_GetClub_Unauthorized(t *testing.T) {
+func TestServiceGetClubUnauthorized(t *testing.T) {
 	db, _, err := graph.Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
@@ -80,7 +80,7 @@ func TestService_GetClub_Unauthorized(t *testing.T) {
 	}
 }
 
-func TestService_UpdateAndDelete(t *testing.T) {
+func TestServiceUpdateAndDelete(t *testing.T) {
 	db, _, err := graph.Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)

@@ -57,7 +57,7 @@ func TestValidationToken(t *testing.T) {
 	}
 }
 
-func TestGenerateValidationToken_SeparatorError(t *testing.T) {
+func TestGenerateValidationTokenSeparatorError(t *testing.T) {
 	// \x01 is the separator. Using it in parameters might cause issues if not handled.
 	// Actually the current implementation just counts them.
 	command := "test\x01"

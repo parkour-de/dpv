@@ -104,7 +104,7 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 }
 
-func TestMembership_InvalidTransitions(t *testing.T) {
+func TestMembershipInvalidTransitions(t *testing.T) {
 	s := setupTestMembershipService(t)
 	defer s.DB.Database.Remove(context.Background())
 	ctx := context.Background()
