@@ -12,9 +12,10 @@ import (
 )
 
 type ClubQueryOptions struct {
-	Skip   int
-	Limit  int
-	Status string
+	Skip              int
+	Limit             int
+	Status            string
+	MissingCensusYear int
 }
 
 // CreateClub creates a club and an 'authorizes' edge for the creator.
@@ -166,6 +167,14 @@ func buildClubQuery(options ClubQueryOptions) (string, map[string]interface{}) {
 	if options.Status != "" {
 		query += "  FILTER club.membership.status == @status\n"
 		bindVars["status"] = options.Status
+	}
+	if options.MissingCensusYear > 0 {
+		query += "  FILTER length(club.census) == 0 OR @missingCensusYear NOT IN club.census[*].year\n"
+		// If Status was not explicitly set, imply active-like statuses
+		if options.Status == "" {
+			query += "  FILTER club.membership.status IN ['active', 'cancelling']\n"
+		}
+		bindVars["missingCensusYear"] = options.MissingCensusYear
 	}
 	query += "  SORT club.name\n"
 	if options.Skip > 0 || options.Limit > 0 {

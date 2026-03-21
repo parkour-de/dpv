@@ -9,7 +9,7 @@ import (
 
 // Apply marks a membership as requested.
 // Optional validateFn can be provided to enforce specific rules (e.g. subsidiary checks).
-func Apply(ctx context.Context, provider entities.MembershipProvider, beginDate int64, memType string, fee float64, validateFn func() error) error {
+func Apply(ctx context.Context, provider entities.MembershipProvider, memType string, fee float64, validateFn func() error) error {
 	if validateFn != nil {
 		if err := validateFn(); err != nil {
 			return err
@@ -33,9 +33,7 @@ func Apply(ctx context.Context, provider entities.MembershipProvider, beginDate 
 	m.Contribution = fee
 	m.EndDate = 0
 	m.BeginDate = 0
-	if beginDate > 0 {
-		m.BeginDate = beginDate
-	}
+	m.ApplicationDate = time.Now().Unix()
 	return nil
 }
 
@@ -46,13 +44,19 @@ func Approve(ctx context.Context, provider entities.MembershipProvider, beginDat
 		return t.Errorf("cannot approve: current status is %s", m.Status)
 	}
 
-	m.Status = "active"
-	m.EndDate = 0
 	if beginDate > 0 {
 		m.BeginDate = beginDate
 	} else if m.BeginDate == 0 {
 		m.BeginDate = time.Now().Unix()
 	}
+	m.EndDate = 0
+
+	if m.BeginDate <= time.Now().Unix() {
+		m.Status = "active"
+	} else {
+		m.Status = "approved"
+	}
+
 	return nil
 }
 
@@ -67,20 +71,29 @@ func Deny(ctx context.Context, provider entities.MembershipProvider) error {
 	return nil
 }
 
-// Cancel marks a membership as cancelled or inactive.
-func Cancel(ctx context.Context, provider entities.MembershipProvider, endDate int64) error {
+// CalculateCancellationDate implements the rule: minimum 3 months notice to the end of a calendar year.
+func CalculateCancellationDate(now time.Time) int64 {
+	year := now.Year()
+	if now.Month() >= time.October {
+		year++
+	}
+	return time.Date(year, time.December, 31, 23, 59, 59, 0, now.Location()).Unix()
+}
+
+// Cancel marks a membership as cancelling or inactive.
+func Cancel(ctx context.Context, provider entities.MembershipProvider) error {
 	m := provider.GetMembership()
-	if m.Status == "active" {
+
+	switch m.Status {
+	case "active", "approved":
+		m.Status = "cancelling"
+		m.EndDate = CalculateCancellationDate(time.Now())
+	case "requested", "denied":
 		m.Status = "cancelled"
-		if endDate > 0 {
-			m.EndDate = endDate
-		} else {
-			m.EndDate = time.Now().Unix()
-		}
-	} else {
-		m.Status = "inactive"
 		m.BeginDate = 0
 		m.EndDate = 0
+	default:
+		return t.Errorf("cannot cancel: current status is %s", m.Status)
 	}
 	return nil
 }

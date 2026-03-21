@@ -23,13 +23,13 @@ func TestUserMembershipLifecycle(t *testing.T) {
 	})
 
 	t.Run("Apply", func(t *testing.T) {
-		err = service.Apply(ctx, user.Key, 1000, "active", 10.0)
+		err = service.Apply(ctx, user.Key, "active", 10.0)
 		if err != nil {
 			t.Fatalf("Apply failed: %v", err)
 		}
 		u, _ := service.DB.Users.Read(user.Key, ctx)
-		if u.Membership.Status != "requested" || u.Membership.BeginDate != 1000 {
-			t.Fatalf("expected requested status with beginDate 1000, got %s / %d", u.Membership.Status, u.Membership.BeginDate)
+		if u.Membership.Status != "requested" || u.Membership.BeginDate != 0 || u.Membership.ApplicationDate == 0 {
+			t.Fatalf("expected requested status with beginDate 0 and ApplicationDate set, got %s / %d / %d", u.Membership.Status, u.Membership.BeginDate, u.Membership.ApplicationDate)
 		}
 	})
 
@@ -45,18 +45,22 @@ func TestUserMembershipLifecycle(t *testing.T) {
 	})
 
 	t.Run("Cancel", func(t *testing.T) {
-		err = service.Cancel(ctx, user.Key, 3000)
+		err = service.Cancel(ctx, user.Key)
 		if err != nil {
 			t.Fatalf("Cancel failed: %v", err)
 		}
 		u, _ := service.DB.Users.Read(user.Key, ctx)
-		if u.Membership.Status != "cancelled" || u.Membership.EndDate != 3000 {
-			t.Fatalf("expected cancelled status with endDate 3000, got %s / %d", u.Membership.Status, u.Membership.EndDate)
+		if u.Membership.Status != "cancelling" {
+			t.Fatalf("expected cancelling status, got %s", u.Membership.Status)
 		}
+
+		// Force to cancelled so subsequent tests can re-apply
+		u.Membership.Status = "cancelled"
+		service.DB.Users.Update(u, ctx)
 	})
 
 	t.Run("Reapply", func(t *testing.T) {
-		err = service.Apply(ctx, user.Key, 4000, "active", 10.0)
+		err = service.Apply(ctx, user.Key, "active", 10.0)
 		if err != nil {
 			t.Fatalf("Re-apply failed: %v", err)
 		}
@@ -78,13 +82,13 @@ func TestUserMembershipLifecycle(t *testing.T) {
 	})
 
 	t.Run("CancelFromDenied", func(t *testing.T) {
-		err = service.Cancel(ctx, user.Key, 0)
+		err = service.Cancel(ctx, user.Key)
 		if err != nil {
 			t.Fatalf("Cancel from denied failed: %v", err)
 		}
 		u, _ := service.DB.Users.Read(user.Key, ctx)
-		if u.Membership.Status != "inactive" {
-			t.Fatalf("expected inactive status, got %s", u.Membership.Status)
+		if u.Membership.Status != "cancelled" {
+			t.Fatalf("expected cancelled status, got %s", u.Membership.Status)
 		}
 	})
 }

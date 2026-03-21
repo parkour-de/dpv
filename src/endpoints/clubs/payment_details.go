@@ -10,7 +10,8 @@ import (
 // PaymentDetailsResponse represents payment information with role-based visibility
 type PaymentDetailsResponse struct {
 	IBAN              string `json:"iban"`
-	SEPAMandateNumber string `json:"sepa_mandate_number,omitempty"`
+	AccountHolder     string `json:"account_holder"`
+	SEPAMandateNumber string `json:"sepa_mandate_number"`
 }
 
 // GetPaymentDetails returns payment information with role-based masking
@@ -32,16 +33,17 @@ func (h *ClubHandler) GetPaymentDetails(w http.ResponseWriter, r *http.Request, 
 
 	isAdmin := api.IsAdmin(*user)
 
-	response := PaymentDetailsResponse{}
+	response := PaymentDetailsResponse{
+		AccountHolder:     club.Membership.AccountHolder,
+		SEPAMandateNumber: club.Membership.SEPAMandateNumber,
+	}
 
 	if isAdmin {
 		// Admin sees everything unmasked
 		response.IBAN = club.Membership.IBAN
-		response.SEPAMandateNumber = club.Membership.SEPAMandateNumber
 	} else {
-		// Non-admin (club owner) sees masked IBAN, no Mandatsreferenz
+		// Non-admin (club owner) sees masked IBAN
 		response.IBAN = api.MaskIBAN(club.Membership.IBAN)
-		// SEPAMandateNumber is omitted (omitempty will exclude it)
 	}
 
 	api.SuccessJson(w, r, response)

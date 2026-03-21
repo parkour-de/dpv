@@ -16,8 +16,8 @@ func (h *UserHandler) Apply(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 
-	membership.HandleApply(w, r, func(ctx context.Context, beginDate int64, memType string, fee float64) error {
-		return h.Service.Apply(ctx, user.Key, beginDate, memType, fee)
+	membership.HandleApply(w, r, func(ctx context.Context, memType string, fee float64) error {
+		return h.Service.Apply(ctx, user.Key, memType, fee)
 	})
 }
 
@@ -55,8 +55,8 @@ func (h *UserHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	key := ps.ByName("key")
-	membership.HandleCancel(w, r, func(ctx context.Context, endDate int64) error {
-		return h.Service.Cancel(ctx, key, endDate)
+	membership.HandleCancel(w, r, func(ctx context.Context) error {
+		return h.Service.Cancel(ctx, key)
 	})
 }
 
@@ -67,7 +67,7 @@ func (h *UserHandler) CancelMe(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 
-	membership.HandleCancel(w, r, func(ctx context.Context, endDate int64) error {
-		return h.Service.Cancel(ctx, user.Key, endDate)
+	membership.HandleCancel(w, r, func(ctx context.Context) error {
+		return h.Service.Cancel(ctx, user.Key)
 	})
 }

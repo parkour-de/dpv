@@ -87,61 +87,84 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 		return t.Errorf("failed to load club for update: %w", err)
 	}
 
-	if err := s.applyClubUpdates(ctx, club, updates, user); err != nil {
+	if patchMap, err := s.buildClubPatch(ctx, club, updates, user); err != nil {
 		return err
-	}
-
-	if err := s.DB.UpdateClub(ctx, club); err != nil {
-		return t.Errorf("failed to update club: %w", err)
-	}
-	return nil
-}
-
-func (s *Service) applyClubUpdates(ctx context.Context, club *entities.Club, updates map[string]interface{}, user *entities.User) error {
-	s.applyBasicFieldUpdates(club, updates, user)
-
-	if parentKey, ok := updates["parent_key"].(string); ok {
-		if err := s.updateParentClub(ctx, club, parentKey); err != nil {
-			return err
+	} else if len(patchMap) > 0 {
+		if err := s.DB.Clubs.Patch(key, patchMap, ctx); err != nil {
+			return t.Errorf("failed to update club: %w", err)
 		}
 	}
 	return nil
 }
 
-func (s *Service) applyBasicFieldUpdates(club *entities.Club, updates map[string]interface{}, user *entities.User) {
-	if name, ok := updates["name"].(string); ok && name != "" {
-		club.Name = name
+func assignStringIfPresent(updates, patch map[string]interface{}, key string, condition bool) error {
+	if val, ok := updates[key].(string); ok {
+		if !condition {
+			return t.Errorf("cannot edit %s field", key)
+		}
+		if val == "" {
+			patch[key] = nil
+		} else {
+			patch[key] = val
+		}
 	}
-	if lf, ok := updates["legal_form"].(string); ok && lf != "" {
-		club.LegalForm = lf
+	return nil
+}
+
+func (s *Service) buildClubPatch(ctx context.Context, club *entities.Club, updates map[string]interface{}, user *entities.User) (map[string]interface{}, error) {
+	canEditIdentity := club.Membership.Status == "inactive" || api.IsAdmin(*user)
+	patch := make(map[string]interface{})
+	memPatch := make(map[string]interface{})
+
+	if name, ok := updates["name"].(string); ok && canEditIdentity {
+		if name == "" {
+			return nil, t.Errorf("club name is mandatory")
+		}
+		patch["name"] = name
 	}
-	if email, ok := updates["email"].(string); ok {
-		club.Email = email
+	if err := assignStringIfPresent(updates, patch, "legal_form", canEditIdentity); err != nil {
+		return nil, err
 	}
-	if cp, ok := updates["contact_person"].(string); ok {
-		club.ContactPerson = cp
+	if err := assignStringIfPresent(updates, patch, "email", true); err != nil {
+		return nil, err
 	}
-	if iban, ok := updates["iban"].(string); ok {
-		club.Membership.IBAN = iban
+	if err := assignStringIfPresent(updates, patch, "contact_person", true); err != nil {
+		return nil, err
 	}
-	if holder, ok := updates["account_holder"].(string); ok {
-		club.Membership.AccountHolder = holder
+	if err := assignStringIfPresent(updates, patch, "state", true); err != nil {
+		return nil, err
 	}
-	if sepam, ok := updates["sepa_mandate_number"].(string); ok && api.IsAdmin(*user) {
-		club.Membership.SEPAMandateNumber = sepam
+	if err := assignStringIfPresent(updates, patch, "registerNumber", canEditIdentity); err != nil {
+		return nil, err
 	}
-	if addr, ok := updates["address"].(string); ok {
-		club.Membership.Address = addr
+	if err := assignStringIfPresent(updates, patch, "exemptionValidity", true); err != nil {
+		return nil, err
 	}
-	if state, ok := updates["state"].(string); ok {
-		club.State = state
+
+	if err := assignStringIfPresent(updates, memPatch, "iban", true); err != nil {
+		return nil, err
 	}
-	if reg, ok := updates["registerNumber"].(string); ok {
-		club.RegisterNumber = reg
+	if err := assignStringIfPresent(updates, memPatch, "account_holder", true); err != nil {
+		return nil, err
 	}
-	if ev, ok := updates["exemptionValidity"].(string); ok {
-		club.ExemptionValidity = ev
+	if err := assignStringIfPresent(updates, memPatch, "sepa_mandate_number", api.IsAdmin(*user)); err != nil {
+		return nil, err
 	}
+	if err := assignStringIfPresent(updates, memPatch, "address", true); err != nil {
+		return nil, err
+	}
+
+	if len(memPatch) > 0 {
+		patch["membership"] = memPatch
+	}
+
+	if parentKey, ok := updates["parent_key"].(string); ok {
+		if err := s.updateParentClub(ctx, club, parentKey); err != nil {
+			return nil, err
+		}
+	}
+
+	return patch, nil
 }
 
 func (s *Service) updateParentClub(ctx context.Context, club *entities.Club, parentKey string) error {
@@ -199,6 +222,10 @@ func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.Use
 	club, err := s.DB.GetClubByKey(ctx, key)
 	if err != nil {
 		return t.Errorf("failed to load club for deletion: %w", err)
+	}
+
+	if club.Membership.Status == "active" || club.Membership.Status == "requested" || club.Membership.Status == "cancelling" {
+		return t.Errorf("cannot delete a club that has an active or requested membership")
 	}
 
 	if err := s.DB.DeleteClub(ctx, club); err != nil {

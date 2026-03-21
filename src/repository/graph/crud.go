@@ -60,6 +60,23 @@ func (im *EntityManager[T]) Update(item T, ctx context.Context) error {
 	return nil
 }
 
+func (im *EntityManager[T]) Patch(key string, patchObject map[string]interface{}, ctx context.Context) error {
+	query := "UPDATE @key WITH @patch IN @@collection OPTIONS { keepNull: false }"
+	bindVars := map[string]interface{}{
+		"key":         key,
+		"patch":       patchObject,
+		"@collection": im.Collection.Name(),
+	}
+	_, err := im.Collection.Database().Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return t.Errorf("could not patch item with key %v: %w", key, err)
+	}
+	if im.Audit != nil {
+		im.Audit.Log(ctx, ActionUpdate, im.Type, key, patchObject)
+	}
+	return nil
+}
+
 func (im *EntityManager[T]) Delete(item T, ctx context.Context) error {
 	_, err := im.Collection.DeleteDocument(ctx, item.GetKey())
 	if err != nil {

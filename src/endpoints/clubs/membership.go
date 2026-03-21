@@ -18,8 +18,8 @@ func (h *ClubHandler) Apply(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 
 	key := ps.ByName("key")
-	membership.HandleApply(w, r, func(ctx context.Context, beginDate int64, memType string, fee float64) error {
-		return h.Service.Apply(ctx, key, user, beginDate, memType, fee)
+	membership.HandleApply(w, r, func(ctx context.Context, memType string, fee float64) error {
+		return h.Service.Apply(ctx, key, user, memType, fee)
 	})
 }
 
@@ -60,7 +60,7 @@ func (h *ClubHandler) Cancel(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	key := ps.ByName("key")
-	membership.HandleCancel(w, r, func(ctx context.Context, endDate int64) error {
-		return h.Service.Cancel(ctx, key, user, endDate)
+	membership.HandleCancel(w, r, func(ctx context.Context) error {
+		return h.Service.Cancel(ctx, key, user)
 	})
 }

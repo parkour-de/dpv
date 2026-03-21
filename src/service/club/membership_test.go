@@ -49,7 +49,7 @@ func TestMembershipWorkflow(t *testing.T) {
 	_ = s.DB.UpsertCensus(ctx, key, &entities.Census{Year: time.Now().Year(), MemberCount: 10})
 
 	// Apply
-	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, 0, "ordinary", 1.0)
+	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, "ordinary", 1.0)
 	if err != nil {
 		t.Fatalf("Apply failed: %v", err)
 	}
@@ -71,18 +71,22 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 
 	// Cancel
-	err = s.Cancel(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, 0)
+	err = s.Cancel(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}})
 	if err != nil {
 		t.Fatalf("Cancel failed: %v", err)
 	}
 
 	updated, _ = s.DB.GetClubByKey(ctx, key)
-	if updated.Membership.Status != "cancelled" {
-		t.Errorf("Status after Cancel should be cancelled, got %s", updated.Membership.Status)
+	if updated.Membership.Status != "cancelling" {
+		t.Errorf("Status after Cancel should be cancelling, got %s", updated.Membership.Status)
 	}
 
+	// Force to cancelled so subsequent tests work
+	updated.Membership.Status = "cancelled"
+	s.DB.UpdateClub(ctx, updated)
+
 	// Apply again from cancelled
-	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, 0, "ordinary", 1.0)
+	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, "ordinary", 1.0)
 	if err != nil {
 		t.Fatalf("Apply after Cancel failed: %v", err)
 	}
@@ -140,7 +144,7 @@ func TestMembershipInvalidTransitions(t *testing.T) {
 
 	// Cannot apply if already active
 	_ = s.DB.UpsertCensus(ctx, key, &entities.Census{Year: time.Now().Year(), MemberCount: 10})
-	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, 0, "ordinary", 1.0)
+	err = s.Apply(ctx, key, &entities.User{Entity: entities.Entity{Key: userKey}}, "ordinary", 1.0)
 	if err == nil || !strings.Contains(err.Error(), "cannot apply") {
 		t.Errorf("Expected 'cannot apply' error, got %v", err)
 	}

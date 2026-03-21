@@ -167,3 +167,109 @@ func TestUserMembershipJourney(t *testing.T) {
 	// but those are mostly tested in unit tests. This confirms routes pass request body successfully!
 	_ = adminKey
 }
+
+func TestPatchValidationJourney(t *testing.T) {
+	server := setupServer(t, "8087")
+	defer server.Close()
+
+	client := &http.Client{}
+
+	// 1. Register a user
+	regUser := `{"email":"patchuser@journey.local","password":"UserPass123!","firstname":"Patch","lastname":"User","consent_privacy":true}`
+	resp, err := http.Post("http://localhost:8087/dpv/users", "application/json", strings.NewReader(regUser))
+	if err != nil {
+		t.Fatalf("Registration failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	b, _ := io.ReadAll(resp.Body)
+	keyStart := strings.Index(string(b), `"_key":"`) + 8
+	keyEnd := strings.Index(string(b)[keyStart:], `"`) + keyStart
+	userKey := string(b[keyStart:keyEnd])
+
+	// 2. Update user: set dateOfBirth to a non-empty string, expect 200
+	req, _ := http.NewRequest("PATCH", "http://localhost:8087/dpv/user/"+userKey, strings.NewReader(`{"dateOfBirth":"2000-01-01"}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, err := client.Do(req)
+	if err != nil || res.StatusCode != http.StatusOK {
+		t.Fatalf("Failed to patch user dateOfBirth: %v, status: %d", err, res.StatusCode)
+	}
+	res.Body.Close()
+
+	// 3. Update user: set firstname to empty string, expect 400 Bad Request
+	req, _ = http.NewRequest("PATCH", "http://localhost:8087/dpv/user/"+userKey, strings.NewReader(`{"firstname":""}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Expected 400 when clearing mandatory firstname, got: %d", res.StatusCode)
+	}
+	res.Body.Close()
+
+	// 4. Update user: set dateOfBirth to empty string, expect 200 OK (UNSET works)
+	req, _ = http.NewRequest("PATCH", "http://localhost:8087/dpv/user/"+userKey, strings.NewReader(`{"dateOfBirth":""}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Expected 200 when clearing optional dateOfBirth, got: %d", res.StatusCode)
+	}
+	res.Body.Close()
+
+	// Verification check
+	req, _ = http.NewRequest("GET", "http://localhost:8087/dpv/user/"+userKey, nil)
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	b, _ = io.ReadAll(res.Body)
+	res.Body.Close()
+	if strings.Contains(string(b), `"dateOfBirth"`) && !strings.Contains(string(b), `"dateOfBirth":""`) {
+		if strings.Contains(string(b), `"2000-01-01"`) {
+			t.Fatalf("dateOfBirth was not unset! JSON: %s", string(b))
+		}
+	}
+
+	// 5. Create a club
+	req, _ = http.NewRequest("POST", "http://localhost:8087/dpv/clubs", strings.NewReader(`{"name":"Patch Club","legal_form":"e.V."}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	b, _ = io.ReadAll(res.Body)
+	res.Body.Close()
+	keyStart = strings.Index(string(b), `"_key":"`) + 8
+	keyEnd = strings.Index(string(b)[keyStart:], `"`) + keyStart
+	clubKey := string(b[keyStart:keyEnd])
+
+	// 6. Update club: set address to non-empty
+	req, _ = http.NewRequest("PATCH", "http://localhost:8087/dpv/club/"+clubKey, strings.NewReader(`{"address":"Street 1"}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Failed to patch club address, status: %d", res.StatusCode)
+	}
+	res.Body.Close()
+
+	// 7. Update club: set name to empty string, expect 400 Bad Request
+	req, _ = http.NewRequest("PATCH", "http://localhost:8087/dpv/club/"+clubKey, strings.NewReader(`{"name":""}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Expected 400 when clearing mandatory name, got: %d", res.StatusCode)
+	}
+	res.Body.Close()
+
+	// 8. Update club: set address to empty string, expect 200 OK
+	req, _ = http.NewRequest("PATCH", "http://localhost:8087/dpv/club/"+clubKey, strings.NewReader(`{"address":""}`))
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Expected 200 when clearing optional address, got: %d", res.StatusCode)
+	}
+	res.Body.Close()
+
+	// Verification check
+	req, _ = http.NewRequest("GET", "http://localhost:8087/dpv/club/"+clubKey, nil)
+	req.SetBasicAuth("patchuser@journey.local", "UserPass123!")
+	res, _ = client.Do(req)
+	b, _ = io.ReadAll(res.Body)
+	res.Body.Close()
+	if strings.Contains(string(b), `"Street 1"`) {
+		t.Fatalf("Address was not unset! JSON: %s", string(b))
+	}
+}

@@ -52,7 +52,6 @@ securitySchemes:
           application/json:
             type: object
             properties:
-              begin_date?: integer
               type?: string
               fee?: number
               consent_privacy?: boolean
@@ -66,11 +65,6 @@ securitySchemes:
       post:
         description: Cancel active membership
         securedBy: [ basicAuth ]
-        body:
-          application/json:
-            type: object
-            properties:
-              end_date?: integer
         responses:
           200:
             description: Membership cancelled
@@ -323,11 +317,6 @@ securitySchemes:
   /cancel:
     post:
       description: Cancel user membership (Admin only)
-      body:
-        application/json:
-          type: object
-          properties:
-            end_date?: integer
       responses:
         200:
           description: Membership cancelled
@@ -345,6 +334,9 @@ securitySchemes:
       limit?:
         type: integer
         default: 100
+      missing_census_year?:
+        type: integer
+        description: Filters returned active/canceling clubs to those lacking a census measurement for this year
     responses:
       200:
         description: List of clubs
@@ -465,10 +457,6 @@ securitySchemes:
           application/json:
             type: object
             properties:
-              begin_date:
-                type: integer
-                required: false
-                description: Desired start date (Unix timestamp)
               type?: string
               fee?: number
               consent_privacy?: boolean
@@ -501,14 +489,6 @@ securitySchemes:
     /cancel:
       post:
         description: Cancel or reset membership
-        body:
-          application/json:
-            type: object
-            properties:
-              end_date:
-                type: integer
-                required: false
-                description: Cancellation date (Unix timestamp)
         responses:
           200:
             description: Membership cancelled/reset

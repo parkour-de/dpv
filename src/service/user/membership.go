@@ -9,13 +9,13 @@ import (
 	"fmt"
 )
 
-func (s *Service) Apply(ctx context.Context, key string, beginDate int64, memType string, fee float64) error {
+func (s *Service) Apply(ctx context.Context, key string, memType string, fee float64) error {
 	user, err := s.DB.Users.Read(key, ctx)
 	if err != nil {
 		return t.Errorf("failed to load user for membership application: %w", err)
 	}
 
-	if err := membership.Apply(ctx, user, beginDate, memType, fee, nil); err != nil {
+	if err := membership.Apply(ctx, user, memType, fee, nil); err != nil {
 		return err
 	}
 
@@ -82,13 +82,13 @@ func (s *Service) Deny(ctx context.Context, key string) error {
 	return nil
 }
 
-func (s *Service) Cancel(ctx context.Context, key string, endDate int64) error {
+func (s *Service) Cancel(ctx context.Context, key string) error {
 	user, err := s.DB.Users.Read(key, ctx)
 	if err != nil {
 		return t.Errorf("failed to load user for membership cancellation: %w", err)
 	}
 
-	if err := membership.Cancel(ctx, user, endDate); err != nil {
+	if err := membership.Cancel(ctx, user); err != nil {
 		return err
 	}
 

@@ -12,7 +12,7 @@ import (
 )
 
 // Apply marks a club's membership as requested.
-func (s *Service) Apply(ctx context.Context, key string, user *entities.User, beginDate int64, memType string, fee float64) error {
+func (s *Service) Apply(ctx context.Context, key string, user *entities.User, memType string, fee float64) error {
 	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return t.Errorf("failed to load club for membership application: %w", err)
@@ -21,7 +21,7 @@ func (s *Service) Apply(ctx context.Context, key string, user *entities.User, be
 	if memType == "" {
 		memType = "ordinary"
 	}
-	if err := membership.Apply(ctx, club, beginDate, memType, fee, func() error {
+	if err := membership.Apply(ctx, club, memType, fee, func() error {
 		return s.validateMembershipApplication(ctx, club)
 	}); err != nil {
 		return err
@@ -88,13 +88,13 @@ func (s *Service) Deny(ctx context.Context, key string) error {
 }
 
 // Cancel marks a club's membership as cancelled or none.
-func (s *Service) Cancel(ctx context.Context, key string, user *entities.User, endDate int64) error {
+func (s *Service) Cancel(ctx context.Context, key string, user *entities.User) error {
 	club, err := s.GetClub(ctx, key, user)
 	if err != nil {
 		return t.Errorf("failed to load club for membership cancellation: %w", err)
 	}
 
-	if err := membership.Cancel(ctx, club, endDate); err != nil {
+	if err := membership.Cancel(ctx, club); err != nil {
 		return err
 	}
 

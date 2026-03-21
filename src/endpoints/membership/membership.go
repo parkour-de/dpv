@@ -8,10 +8,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"time"
 )
 
-func HandleApply(w http.ResponseWriter, r *http.Request, applyFn func(ctx context.Context, beginDate int64, memType string, fee float64) error) {
+func HandleApply(w http.ResponseWriter, r *http.Request, applyFn func(ctx context.Context, memType string, fee float64) error) {
 	var req struct {
 		ConsentPrivacy  bool    `json:"consent_privacy"`
 		ConsentAccuracy bool    `json:"consent_accuracy"`
@@ -30,9 +29,7 @@ func HandleApply(w http.ResponseWriter, r *http.Request, applyFn func(ctx contex
 		return
 	}
 
-	beginDate := time.Now().Unix()
-
-	if err := applyFn(r.Context(), beginDate, req.Type, req.Fee); err != nil {
+	if err := applyFn(r.Context(), req.Type, req.Fee); err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
 	}
@@ -66,16 +63,8 @@ func HandleDeny(w http.ResponseWriter, r *http.Request, denyFn func(ctx context.
 	api.SuccessJson(w, r, map[string]string{"message": t.T(t.Errorf("membership denied"), api.DetectLanguage(r))})
 }
 
-func HandleCancel(w http.ResponseWriter, r *http.Request, cancelFn func(ctx context.Context, endDate int64) error) {
-	var req struct {
-		EndDate int64 `json:"end_date"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
-		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	if err := cancelFn(r.Context(), req.EndDate); err != nil {
+func HandleCancel(w http.ResponseWriter, r *http.Request, cancelFn func(ctx context.Context) error) {
+	if err := cancelFn(r.Context()); err != nil {
 		api.Error(w, r, err, http.StatusBadRequest)
 		return
 	}

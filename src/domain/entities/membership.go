@@ -8,8 +8,9 @@ type Membership struct {
 	Contribution      float64 `json:"contribution"`
 	Status            string  `json:"status"` // inactive, requested, active, denied, cancelled
 	Address           string  `json:"address,omitempty"`
-	BeginDate         int64   `json:"begin_date"` // unix seconds
-	EndDate           int64   `json:"end_date"`   // unix seconds
+	ApplicationDate   int64   `json:"application_date,omitempty"` // unix seconds
+	BeginDate         int64   `json:"begin_date,omitempty"`       // unix seconds
+	EndDate           int64   `json:"end_date,omitempty"`         // unix seconds
 	MembershipNumber  string  `json:"membership_number,omitempty"`
 	CurrentFee        float64 `json:"current_fee,omitempty"`
 	CurrentVotes      int     `json:"current_votes,omitempty"`
@@ -29,6 +30,7 @@ func (m Membership) FilteredResponse() Membership {
 		Contribution:     m.Contribution,
 		Type:             m.Type,
 		BeginDate:        m.BeginDate,
+		ApplicationDate:  m.ApplicationDate,
 		EndDate:          m.EndDate,
 		Address:          m.Address,
 		MembershipNumber: m.MembershipNumber,

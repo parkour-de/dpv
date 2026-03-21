@@ -22,8 +22,9 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 	status := r.URL.Query().Get("status")
 	skip, _ := api.ParseInt(r.URL.Query().Get("skip"))
 	limit, _ := api.ParseInt(r.URL.Query().Get("limit"))
+	missingCensusYear, _ := api.ParseInt(r.URL.Query().Get("missing_census_year"))
 
-	clubs, err := h.getClubsForUser(r.Context(), user, status, skip, limit)
+	clubs, err := h.getClubsForUser(r.Context(), user, status, skip, limit, missingCensusYear)
 	if err != nil {
 		api.Error(w, r, err, http.StatusInternalServerError)
 		return
@@ -38,12 +39,13 @@ func (h *ClubHandler) List(w http.ResponseWriter, r *http.Request, _ httprouter.
 	api.SuccessJson(w, r, resp)
 }
 
-func (h *ClubHandler) getClubsForUser(ctx context.Context, user *entities.User, status string, skip, limit int) ([]entities.Club, error) {
+func (h *ClubHandler) getClubsForUser(ctx context.Context, user *entities.User, status string, skip, limit, missingCensusYear int) ([]entities.Club, error) {
 	if api.IsAdmin(*user) {
 		options := graph.ClubQueryOptions{
-			Skip:   skip,
-			Limit:  limit,
-			Status: status,
+			Skip:              skip,
+			Limit:             limit,
+			Status:            status,
+			MissingCensusYear: missingCensusYear,
 		}
 		return h.Service.GetAllClubs(ctx, options)
 	}

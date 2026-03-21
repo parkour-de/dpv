@@ -66,57 +66,67 @@ func (s *Service) List(ctx context.Context, memStatus, hasClub string) ([]entiti
 	return s.DB.GetUsersByFilter(ctx, memStatus, hasClub)
 }
 
-func applyUpdates(user *entities.User, updates map[string]interface{}) (bool, error) {
-	updated := false
-
-	if first, ok := updates["firstname"].(string); ok && first != "" {
-		user.FirstName = first
-		updated = true
-	}
-	if last, ok := updates["lastname"].(string); ok && last != "" {
-		user.LastName = last
-		updated = true
-	}
-	if lang, ok := updates["language"].(string); ok {
-		if lang == "default" {
-			user.Language = ""
-		} else {
-			user.Language = lang
+func assignStringIfPresent(updates, patch map[string]interface{}, key string, condition bool) error {
+	if val, ok := updates[key].(string); ok {
+		if !condition {
+			return t.Errorf("cannot edit %s field", key)
 		}
-		updated = true
+		if val == "" {
+			patch[key] = nil
+		} else {
+			patch[key] = val
+		}
+	}
+	return nil
+}
+
+func buildUserPatch(user *entities.User, updates map[string]interface{}) (map[string]interface{}, error) {
+	patch := make(map[string]interface{})
+	memPatch := make(map[string]interface{})
+
+	if first, ok := updates["firstname"].(string); ok {
+		if first == "" {
+			return nil, t.Errorf("firstname is mandatory")
+		}
+		patch["firstname"] = first
+	}
+	if last, ok := updates["lastname"].(string); ok {
+		if last == "" {
+			return nil, t.Errorf("lastname is mandatory")
+		}
+		patch["lastname"] = last
+	}
+	if err := assignStringIfPresent(updates, patch, "language", true); err != nil {
+		return nil, err
+	}
+	if err := assignStringIfPresent(updates, patch, "dateOfBirth", true); err != nil {
+		return nil, err
+	}
+	if err := assignStringIfPresent(updates, patch, "your_club", true); err != nil {
+		return nil, err
 	}
 
-	if db, ok := updates["dateOfBirth"].(string); ok {
-		user.DateOfBirth = db
-		updated = true
+	if err := assignStringIfPresent(updates, memPatch, "address", true); err != nil {
+		return nil, err
+	}
+	if err := assignStringIfPresent(updates, memPatch, "iban", true); err != nil {
+		return nil, err
+	}
+	if err := assignStringIfPresent(updates, memPatch, "account_holder", true); err != nil {
+		return nil, err
+	}
+	if err := assignStringIfPresent(updates, memPatch, "sepa_mandate_number", true); err != nil {
+		return nil, err
 	}
 
-	if yc, ok := updates["your_club"].(string); ok {
-		user.YourClub = yc
-		updated = true
+	if len(memPatch) > 0 {
+		patch["membership"] = memPatch
 	}
 
-	if address, ok := updates["address"].(string); ok {
-		user.Membership.Address = address
-		updated = true
+	if len(patch) == 0 {
+		return nil, t.Errorf("no fields to update")
 	}
-	if iban, ok := updates["iban"].(string); ok {
-		user.Membership.IBAN = iban
-		updated = true
-	}
-	if holder, ok := updates["account_holder"].(string); ok {
-		user.Membership.AccountHolder = holder
-		updated = true
-	}
-	if sepa, ok := updates["sepa_mandate_number"].(string); ok {
-		user.Membership.SEPAMandateNumber = sepa
-		updated = true
-	}
-
-	if !updated {
-		return false, t.Errorf("no fields to update")
-	}
-	return true, nil
+	return patch, nil
 }
 
 func (s *Service) UpdateUser(ctx context.Context, userKey string, updates map[string]interface{}) (*entities.User, error) {
@@ -125,11 +135,14 @@ func (s *Service) UpdateUser(ctx context.Context, userKey string, updates map[st
 		return nil, t.Errorf("user not found: %w", err)
 	}
 
-	_, err = applyUpdates(user, updates)
+	patch, err := buildUserPatch(user, updates)
 	if err != nil {
 		return nil, err
 	}
-	err = s.DB.Users.Update(user, ctx)
+	err = s.DB.Users.Patch(userKey, patch, ctx)
+	if err == nil {
+		user, _ = s.DB.Users.Read(userKey, ctx)
+	}
 	return user, err
 }
 

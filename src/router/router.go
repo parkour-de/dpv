@@ -13,6 +13,7 @@ import (
 	"dpv/dpv/src/repository/t"
 	"dpv/dpv/src/service/census"
 	"dpv/dpv/src/service/club"
+	"dpv/dpv/src/service/membership"
 	"dpv/dpv/src/service/user"
 	"log"
 	"net/http"
@@ -138,6 +139,8 @@ func NewServer(configPath string, test bool) *http.Server {
 		port = "8080"
 		log.Printf("defaulting to port %s", port)
 	}
+
+	membership.StartCron(db)
 
 	addr := ":" + port
 	return &http.Server{
