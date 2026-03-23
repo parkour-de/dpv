@@ -24,7 +24,7 @@ func BasicAuthMiddleware(next httprouter.Handle, db *graph.Db) httprouter.Handle
 		user, err := api.Authenticated(r, db)
 		if err != nil {
 			w.Header().Set("WWW-Authenticate", "Basic realm=DPV")
-			http.Error(w, "Unauthorized", 401)
+			api.Error(w, r, err, http.StatusUnauthorized)
 			return
 		}
 
