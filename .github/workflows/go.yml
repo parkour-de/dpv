@@ -64,6 +64,10 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=short
 
+      - name: Get version
+        id: version
+        run: echo "count=$(git rev-list --count main)" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
@@ -71,5 +75,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ steps.version.outputs.count }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
