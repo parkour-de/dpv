@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"mime"
 	"mime/quotedprintable"
+	"net"
 	"net/smtp"
 	"time"
 )
@@ -35,41 +36,67 @@ type PasswordResetData struct {
 	ExpiryTime time.Time
 }
 
-func (s *Service) SendEmailValidationEmail(data ValidationData) error {
-	if s.Config.Email.SMTPHost == "" {
-		return nil
-	}
-
-	// Configure SMTP
-	auth := smtp.PlainAuth("",
-		s.Config.Email.SMTPUsername,
-		s.Config.Email.SMTPPassword,
-		s.Config.Email.SMTPHost)
-
-	// Create TLS config
+func (s *Service) createSMTPClient() (*smtp.Client, error) {
+	addr := net.JoinHostPort(s.Config.Email.SMTPHost, fmt.Sprint(s.Config.Email.SMTPPort))
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: false,
 		ServerName:         s.Config.Email.SMTPHost,
 	}
 
-	// Connect to server
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.Config.Email.SMTPHost, s.Config.Email.SMTPPort), tlsConfig)
-	if err != nil {
-		return fmt.Errorf("failed to connect to SMTP server: %w", err)
-	}
-	defer conn.Close()
+	var client *smtp.Client
 
-	// Create SMTP client
-	client, err := smtp.NewClient(conn, s.Config.Email.SMTPHost)
-	if err != nil {
-		return fmt.Errorf("failed to create SMTP client: %w", err)
+	if s.Config.Email.SMTPPort == 465 {
+		// Implicit TLS
+		conn, err := tls.Dial("tcp", addr, tlsConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to SMTP server: %w", err)
+		}
+		client, err = smtp.NewClient(conn, s.Config.Email.SMTPHost)
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("failed to create SMTP client: %w", err)
+		}
+	} else {
+		// Explicit TLS (STARTTLS), usually port 587 or 25
+		conn, err := net.Dial("tcp", addr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to SMTP server: %w", err)
+		}
+		client, err = smtp.NewClient(conn, s.Config.Email.SMTPHost)
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("failed to create SMTP client: %w", err)
+		}
+		if err = client.StartTLS(tlsConfig); err != nil {
+			client.Close()
+			return nil, fmt.Errorf("failed to start TLS: %w", err)
+		}
 	}
-	defer client.Quit()
 
 	// Authenticate
-	if err = client.Auth(auth); err != nil {
-		return fmt.Errorf("SMTP authentication failed: %w", err)
+	auth := smtp.PlainAuth("",
+		s.Config.Email.SMTPUsername,
+		s.Config.Email.SMTPPassword,
+		s.Config.Email.SMTPHost)
+
+	if err := client.Auth(auth); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("SMTP authentication failed: %w", err)
 	}
+
+	return client, nil
+}
+
+func (s *Service) SendEmailValidationEmail(data ValidationData) error {
+	if s.Config.Email.SMTPHost == "" {
+		return nil
+	}
+
+	client, err := s.createSMTPClient()
+	if err != nil {
+		return err
+	}
+	defer client.Quit()
 
 	// Set sender and recipient
 	if err = client.Mail(s.Config.Email.FromAddress); err != nil {
@@ -105,31 +132,11 @@ func (s *Service) SendPasswordResetEmail(data PasswordResetData) error {
 		return nil
 	}
 
-	auth := smtp.PlainAuth("",
-		s.Config.Email.SMTPUsername,
-		s.Config.Email.SMTPPassword,
-		s.Config.Email.SMTPHost)
-
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false,
-		ServerName:         s.Config.Email.SMTPHost,
-	}
-
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.Config.Email.SMTPHost, s.Config.Email.SMTPPort), tlsConfig)
+	client, err := s.createSMTPClient()
 	if err != nil {
-		return fmt.Errorf("failed to connect to SMTP server: %w", err)
-	}
-	defer conn.Close()
-
-	client, err := smtp.NewClient(conn, s.Config.Email.SMTPHost)
-	if err != nil {
-		return fmt.Errorf("failed to create SMTP client: %w", err)
+		return err
 	}
 	defer client.Quit()
-
-	if err = client.Auth(auth); err != nil {
-		return fmt.Errorf("SMTP authentication failed: %w", err)
-	}
 
 	if err = client.Mail(s.Config.Email.FromAddress); err != nil {
 		return fmt.Errorf("failed to set sender: %w", err)
@@ -251,21 +258,12 @@ func (s *Service) sendGenericEmail(to, subject, textBody, htmlBody string) error
 		return nil
 	}
 
-	auth := smtp.PlainAuth("", s.Config.Email.SMTPUsername, s.Config.Email.SMTPPassword, s.Config.Email.SMTPHost)
-	tlsConfig := &tls.Config{InsecureSkipVerify: false, ServerName: s.Config.Email.SMTPHost}
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.Config.Email.SMTPHost, s.Config.Email.SMTPPort), tlsConfig)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	client, err := smtp.NewClient(conn, s.Config.Email.SMTPHost)
+	client, err := s.createSMTPClient()
 	if err != nil {
 		return err
 	}
 	defer client.Quit()
-	if err = client.Auth(auth); err != nil {
-		return err
-	}
+
 	if err = client.Mail(s.Config.Email.FromAddress); err != nil {
 		return err
 	}
