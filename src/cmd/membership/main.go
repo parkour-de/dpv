@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	_ "time/tzdata"
 )
 
 var version = "0"
