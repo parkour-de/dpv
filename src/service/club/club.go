@@ -7,6 +7,7 @@ import (
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/storage"
 	"dpv/dpv/src/repository/t"
+	"dpv/dpv/src/service/common"
 	"strings"
 )
 
@@ -97,60 +98,43 @@ func (s *Service) UpdateClub(ctx context.Context, key string, updates map[string
 	return nil
 }
 
-func assignStringIfPresent(updates, patch map[string]interface{}, key string, condition bool) error {
-	if val, ok := updates[key].(string); ok {
-		if !condition {
-			return t.Errorf("cannot edit %s field", key)
-		}
-		if val == "" {
-			patch[key] = nil
-		} else {
-			patch[key] = val
-		}
-	}
-	return nil
-}
-
 func (s *Service) buildClubPatch(ctx context.Context, club *entities.Club, updates map[string]interface{}, user *entities.User) (map[string]interface{}, error) {
 	canEditIdentity := club.Membership.Status == "inactive" || api.IsAdmin(*user)
 	patch := make(map[string]interface{})
 	memPatch := make(map[string]interface{})
 
-	if name, ok := updates["name"].(string); ok && canEditIdentity {
-		if name == "" {
-			return nil, t.Errorf("club name is mandatory")
-		}
-		patch["name"] = name
-	}
-	if err := assignStringIfPresent(updates, patch, "legal_form", canEditIdentity); err != nil {
+	if err := common.AssignMandatoryString(updates, patch, "name", canEditIdentity); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, patch, "email", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, patch, "legal_form", canEditIdentity); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, patch, "contact_person", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, patch, "email", true); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, patch, "state", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, patch, "contact_person", true); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, patch, "registerNumber", canEditIdentity); err != nil {
+	if err := common.AssignStringIfPresent(updates, patch, "state", true); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, patch, "exemptionValidity", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, patch, "registerNumber", canEditIdentity); err != nil {
+		return nil, err
+	}
+	if err := common.AssignStringIfPresent(updates, patch, "exemptionValidity", true); err != nil {
 		return nil, err
 	}
 
-	if err := assignStringIfPresent(updates, memPatch, "iban", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, memPatch, "iban", true); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, memPatch, "account_holder", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, memPatch, "account_holder", true); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, memPatch, "sepa_mandate_number", api.IsAdmin(*user)); err != nil {
+	if err := common.AssignStringIfPresent(updates, memPatch, "sepa_mandate_number", api.IsAdmin(*user)); err != nil {
 		return nil, err
 	}
-	if err := assignStringIfPresent(updates, memPatch, "address", true); err != nil {
+	if err := common.AssignStringIfPresent(updates, memPatch, "address", true); err != nil {
 		return nil, err
 	}
 
