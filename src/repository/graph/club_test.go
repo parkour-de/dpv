@@ -60,7 +60,7 @@ func TestClubOwnerManagement(t *testing.T) {
 	}
 
 	// 5. Add user2 as owner
-	err = db.AddVorstand(ctx, club.GetKey(), user2.GetKey(), true)
+	err = db.AddVorstand(ctx, club.GetKey(), user2.GetKey(), true, "Kassenwart")
 	if err != nil {
 		t.Fatalf("AddVorstand failed: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestClubOwnerManagement(t *testing.T) {
 		t.Errorf("Expected 2 owners, got %d", count)
 	}
 
-	// 7. Verify GetClubByKey includes both
+	// 7. Verify GetClubByKey includes both, and function is correct
 	fetchedClub, err := db.GetClubByKey(ctx, club.GetKey())
 	if err != nil {
 		t.Fatalf("GetClubByKey failed: %v", err)
@@ -82,14 +82,48 @@ func TestClubOwnerManagement(t *testing.T) {
 	if len(fetchedClub.Vorstand) != 2 {
 		t.Errorf("Expected 2 Vorstand members in struct, got %d", len(fetchedClub.Vorstand))
 	}
+	var foundUser2 *entities.VorstandUser
+	for _, v := range fetchedClub.Vorstand {
+		if v.Key == user2.GetKey() {
+			val := v
+			foundUser2 = &val
+		}
+	}
+	if foundUser2 == nil {
+		t.Fatalf("User 2 not found in Vorstand")
+	}
+	if foundUser2.Function != "Kassenwart" {
+		t.Errorf("Expected function 'Kassenwart', got '%s'", foundUser2.Function)
+	}
 
-	// 8. Remove user2
+	// 8. Upsert user2 to clear function completely
+	err = db.AddVorstand(ctx, club.GetKey(), user2.GetKey(), true, "")
+	if err != nil {
+		t.Fatalf("AddVorstand failed for clearing function: %v", err)
+	}
+
+	fetchedClub, err = db.GetClubByKey(ctx, club.GetKey())
+	if err != nil {
+		t.Fatalf("GetClubByKey failed after clear: %v", err)
+	}
+	foundUser2 = nil
+	for _, v := range fetchedClub.Vorstand {
+		if v.Key == user2.GetKey() {
+			val := v
+			foundUser2 = &val
+		}
+	}
+	if foundUser2.Function != "" {
+		t.Errorf("Expected cleared function to be empty, got '%s'", foundUser2.Function)
+	}
+
+	// 9. Remove user2
 	err = db.RemoveVorstand(ctx, club.GetKey(), user2.GetKey())
 	if err != nil {
 		t.Fatalf("RemoveVorstand failed: %v", err)
 	}
 
-	// 9. Verify Count is 1 again
+	// 10. Verify Count is 1 again
 	count, err = db.CountVorstand(ctx, club.GetKey())
 	if err != nil {
 		t.Fatalf("CountVorstand failed: %v", err)

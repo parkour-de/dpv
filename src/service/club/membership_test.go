@@ -35,7 +35,7 @@ func TestMembershipWorkflow(t *testing.T) {
 	}
 	key := club.GetKey()
 
-	err = s.DB.AddVorstand(ctx, key, userKey, true)
+	err = s.DB.AddVorstand(ctx, key, userKey, true, "")
 	if err != nil {
 		t.Fatalf("AddVorstand failed: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestMembershipInvalidTransitions(t *testing.T) {
 	}
 	key := club.GetKey()
 
-	err = s.DB.AddVorstand(ctx, key, userKey, true)
+	err = s.DB.AddVorstand(ctx, key, userKey, true, "")
 	if err != nil {
 		t.Fatalf("AddVorstand failed: %v", err)
 	}

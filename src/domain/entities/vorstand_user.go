@@ -7,4 +7,5 @@ type VorstandUser struct {
 	Lastname                 string `json:"lastname"`
 	Email                    string `json:"email,omitempty"`
 	AuthorizedRepresentative bool   `json:"authorizedRepresentative"`
+	Function                 string `json:"function,omitempty"`
 }

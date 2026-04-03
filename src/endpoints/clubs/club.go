@@ -147,6 +147,7 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 	var req struct {
 		Email                    string `json:"email"`
 		AuthorizedRepresentative bool   `json:"authorizedRepresentative"`
+		Function                 string `json:"function"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.Error(w, r, t.Errorf("read request body failed: %w", err), http.StatusBadRequest)
@@ -158,7 +159,7 @@ func (h *ClubHandler) AddOwner(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	err = h.Service.AddOwner(r.Context(), key, req.Email, req.AuthorizedRepresentative, user)
+	err = h.Service.AddOwner(r.Context(), key, req.Email, req.AuthorizedRepresentative, req.Function, user)
 	if err != nil {
 		api.Error(w, r, t.Errorf("could not add owner: %w", err), http.StatusBadRequest)
 		return

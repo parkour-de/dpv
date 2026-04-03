@@ -219,7 +219,7 @@ func (s *Service) DeleteClub(ctx context.Context, key string, user *entities.Use
 }
 
 // AddOwner adds a user as a club owner by email.
-func (s *Service) AddOwner(ctx context.Context, clubKey, email string, authorizedRepresentative bool, actor *entities.User) error {
+func (s *Service) AddOwner(ctx context.Context, clubKey, email string, authorizedRepresentative bool, function string, actor *entities.User) error {
 	authorized, err := s.IsAuthorized(ctx, actor, clubKey)
 	if err != nil {
 		return t.Errorf("authorization check failed while adding owner: %w", err)
@@ -237,7 +237,7 @@ func (s *Service) AddOwner(ctx context.Context, clubKey, email string, authorize
 	}
 	targetUser := users[0]
 
-	return s.DB.AddVorstand(ctx, clubKey, targetUser.Key, authorizedRepresentative)
+	return s.DB.AddVorstand(ctx, clubKey, targetUser.Key, authorizedRepresentative, function)
 }
 
 // RemoveOwner removes a user from club owners.
