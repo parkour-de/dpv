@@ -81,7 +81,7 @@ func (db *Db) GetClubByKey(ctx context.Context, key string) (*entities.Club, err
 		LET vorstand = (
 			FOR v, e IN 1..1 INBOUND CONCAT("clubs/", @key) edges
 				FILTER e.type == "authorizes" AND e.role == "vorstand"
-				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname, email: v.email, authorizedRepresentative: e.authorizedRepresentative, role: e.function}
+				RETURN {_key: v._key, firstname: v.firstname, lastname: v.lastname, email: v.email, authorizedRepresentative: e.authorizedRepresentative, function: e.function}
 		)
 		LET census = (
 			FOR v, e IN 1..1 OUTBOUND CONCAT("clubs/", @key) edges

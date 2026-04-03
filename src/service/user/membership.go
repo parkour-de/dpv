@@ -63,6 +63,10 @@ func (s *Service) Approve(ctx context.Context, key string, beginDate int64) erro
 	if err := s.DB.Users.Update(user, ctx); err != nil {
 		return t.Errorf("failed to update user for membership approval: %w", err)
 	}
+
+	emailService := email.NewService(dpv.ConfigInstance)
+	_ = emailService.SendApplicationAcceptedEmail(user, nil)
+
 	return nil
 }
 

@@ -2,7 +2,9 @@ package membership
 
 import (
 	"context"
+	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
+	"dpv/dpv/src/service/email"
 	"log"
 	"time"
 )
@@ -33,9 +35,31 @@ func runTransitions(db *graph.Db) {
 	ctx := context.Background()
 	nowUnix := time.Now().Unix()
 
-	if err := db.ProcessMembershipTransitions(ctx, nowUnix); err != nil {
+	transitions, err := db.ProcessMembershipTransitions(ctx, nowUnix)
+	if err != nil {
 		log.Printf("Error processing membership transitions: %v\n", err)
-	} else {
-		log.Println("Membership status transitions processed successfully.")
+		return
 	}
+
+	emailService := email.NewService(dpv.ConfigInstance)
+
+	for _, u := range transitions.ActivatedUsers {
+		u := u
+		_ = emailService.SendMembershipBeganEmail(&u, nil)
+	}
+	for _, c := range transitions.ActivatedClubs {
+		c := c
+		_ = emailService.SendMembershipBeganEmail(nil, &c)
+	}
+	for _, u := range transitions.CancelledUsers {
+		u := u
+		_ = emailService.SendMembershipEndedEmail(&u, nil)
+	}
+	for _, c := range transitions.CancelledClubs {
+		c := c
+		_ = emailService.SendMembershipEndedEmail(nil, &c)
+	}
+
+	log.Println("Membership status transitions processed successfully.")
 }
+

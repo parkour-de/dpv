@@ -67,6 +67,10 @@ func (s *Service) Approve(ctx context.Context, key string, beginDate int64) erro
 	if err := s.DB.UpdateClub(ctx, club); err != nil {
 		return t.Errorf("failed to update club for membership approval: %w", err)
 	}
+
+	emailService := email.NewService(dpv.ConfigInstance)
+	_ = emailService.SendApplicationAcceptedEmail(nil, club)
+
 	return nil
 }
 
