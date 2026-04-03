@@ -98,7 +98,7 @@ func RequireAktivAdmin(r *http.Request, db *graph.Db) (*entities.User, error) {
 		return nil, t.Errorf("authentication failed: %w", err)
 	}
 	if !IsAktivAdmin(*user) {
-		return nil, t.Errorf("you are not an actively managing administrator")
+		return nil, t.Errorf("you are not an aktivadmin")
 	}
 	return user, nil
 }

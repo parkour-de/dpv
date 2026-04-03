@@ -271,6 +271,32 @@ func (s *Service) UpdateRoles(ctx context.Context, userKey string, roles []strin
 		return t.Errorf("user not found: %w", err)
 	}
 
+	// Active membership check for aktivadmin
+	hasAktivAdmin := false
+	for _, role := range roles {
+		if role == "aktivadmin" {
+			hasAktivAdmin = true
+			break
+		}
+	}
+
+	if hasAktivAdmin {
+		wasAktivAdmin := false
+		for _, role := range user.Roles {
+			if role == "aktivadmin" {
+				wasAktivAdmin = true
+				break
+			}
+		}
+
+		// If newly adding aktivadmin role, check for active membership
+		if !wasAktivAdmin {
+			if user.Membership.Type != "active" || (user.Membership.Status != "active" && user.Membership.Status != "cancelling") {
+				return t.Errorf("an active membership is required to become an aktivadmin.")
+			}
+		}
+	}
+
 	user.Roles = roles
 	return s.DB.Users.Update(user, ctx)
 }
