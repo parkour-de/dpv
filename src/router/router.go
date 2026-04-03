@@ -5,6 +5,7 @@ import (
 	"dpv/dpv/src/endpoints/audit"
 	censusEndpoints "dpv/dpv/src/endpoints/census"
 	"dpv/dpv/src/endpoints/clubs"
+	configEndpoints "dpv/dpv/src/endpoints/config"
 	"dpv/dpv/src/endpoints/users"
 	"dpv/dpv/src/middleware"
 	"dpv/dpv/src/repository/dpv"
@@ -13,6 +14,7 @@ import (
 	"dpv/dpv/src/repository/t"
 	"dpv/dpv/src/service/census"
 	"dpv/dpv/src/service/club"
+	configService "dpv/dpv/src/service/config"
 	"dpv/dpv/src/service/membership"
 	"dpv/dpv/src/service/user"
 	"log"
@@ -56,6 +58,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	censusService := census.NewService(db)
 	censusHandler := censusEndpoints.NewHandler(censusService)
 
+	cfgService := configService.NewService(db)
+	cfgHandler := configEndpoints.NewHandler(cfgService)
+
 	auditHandler := audit.NewHandler(db)
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +75,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	})
 
 	r.GET("/dpv/version", middleware.CORSMiddleware(Version))
+	r.GET("/dpv/config", middleware.CORSMiddleware(cfgHandler.Get))
+	r.PATCH("/dpv/config/links", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(cfgHandler.UpdateLinks, db)))
+	
 	r.POST("/dpv/users", middleware.CORSMiddleware(userHandler.Register))
 	r.GET("/dpv/users/me", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.Me, db)))
 	r.POST("/dpv/users/request-email-validation", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(userHandler.RequestEmailValidation, db)))

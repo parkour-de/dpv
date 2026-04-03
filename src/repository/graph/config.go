@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/t"
 
 	"github.com/arangodb/go-driver/v2/arangodb"
@@ -40,4 +41,58 @@ func (db *Db) GetNextSequence(ctx context.Context, sequenceKey string) (int, err
 	}
 
 	return nextValue, nil
+}
+
+func (db *Db) GetConfig(ctx context.Context) (*entities.Config, error) {
+	// UPSERT to guarantee config exists
+	query := `
+		UPSERT { _key: "config" }
+		INSERT { _key: "config", sequences: {} }
+		UPDATE {}
+		IN @@collection
+		RETURN NEW
+	`
+	bindVars := map[string]interface{}{
+		"@collection": "configs",
+	}
+
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return nil, t.Errorf("failed to query config: %w", err)
+	}
+	defer cursor.Close()
+
+	var config entities.Config
+	if _, err := cursor.ReadDocument(ctx, &config); err != nil {
+		return nil, t.Errorf("failed to read config from cursor: %w", err)
+	}
+
+	return &config, nil
+}
+
+func (db *Db) UpdateLinks(ctx context.Context, links map[string]string) (*entities.Config, error) {
+	query := `
+		UPSERT { _key: "config" }
+		INSERT { _key: "config", links: @links }
+		UPDATE { links: @links }
+		IN @@collection
+		RETURN NEW
+	`
+	bindVars := map[string]interface{}{
+		"@collection": "configs",
+		"links":       links,
+	}
+
+	cursor, err := db.Database.Query(ctx, query, &arangodb.QueryOptions{BindVars: bindVars})
+	if err != nil {
+		return nil, t.Errorf("failed to update config links: %w", err)
+	}
+	defer cursor.Close()
+
+	var config entities.Config
+	if _, err := cursor.ReadDocument(ctx, &config); err != nil {
+		return nil, t.Errorf("failed to read config from cursor: %w", err)
+	}
+
+	return &config, nil
 }

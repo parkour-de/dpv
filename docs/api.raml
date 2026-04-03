@@ -630,6 +630,37 @@ securitySchemes:
           application/json:
             type: array
 
+/config:
+  get:
+    description: Get global configuration, including dynamic links
+    responses:
+      200:
+        description: Successful retrieval of configuration
+        body:
+          application/json:
+            type: object
+            properties:
+              links:
+                type: object
+                description: Map of configurable links
+  /links:
+    patch:
+      description: Update global configurable links (Admin only)
+      securedBy: [ basicAuth ]
+      body:
+        application/json:
+          type: object
+          properties:
+            links:
+              type: object
+              description: Key-value map of links
+      responses:
+        200:
+          description: Configuration updated successfully
+          body:
+            application/json:
+              type: object
+
 /version:
   get:
     description: Returns the version of the API - the only endpoint that does not use JSON-formatted response, i.e. no quotes around version string
