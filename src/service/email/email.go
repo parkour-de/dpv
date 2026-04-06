@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/smtp"
 	text_template "text/template"
+	"strings"
 	"time"
 )
 
@@ -179,7 +180,7 @@ func init() {
 Über die DPV-Mitgliederverwaltung:
 Die DPV-Mitgliederverwaltung ist das offizielle System des Deutschen Parkour Verbandes zur Verwaltung von Mitgliedschaften, Vereinen und Organisationen. Mit diesem System kannst Du Deine Mitgliedschaft beantragen, Vereinsdaten verwalten und an der Parkour-Community in Deutschland teilnehmen.
 
-Bei Fragen wende Dich an: info@parkour-deutschland.de
+Bei Fragen wende Dich an: {{.InfoAddress}}
 
 © {{.Year}} Deutscher Parkour Verband`))
 
@@ -202,7 +203,7 @@ Bei Fragen wende Dich an: info@parkour-deutschland.de
         <p><strong>Über die DPV-Mitgliederverwaltung:</strong><br>
         Die DPV-Mitgliederverwaltung ist das offizielle System des Deutschen Parkour Verbandes zur Verwaltung von Mitgliedschaften, Vereinen und Organisationen. Mit diesem System kannst Du Deine Mitgliedschaft beantragen, Vereinsdaten verwalten und an der Parkour-Community in Deutschland teilnehmen.</p>
         
-        <p>Bei Fragen wende Dich an: <a href="mailto:info@parkour-deutschland.de">info@parkour-deutschland.de</a></p>
+        <p>Bei Fragen wende Dich an: <a href="mailto:{{.InfoAddress}}">{{.InfoAddress}}</a></p>
         
         <p>© {{.Year}} Deutscher Parkour Verband</p>
     </div>
@@ -211,17 +212,19 @@ Bei Fragen wende Dich an: info@parkour-deutschland.de
 }
 
 type templateData struct {
-	Title   string
-	Content interface{}
-	Year    int
+	Title       string
+	Content     interface{}
+	Year        int
+	InfoAddress string
 }
 
 func (s *Service) wrapText(title, content string) string {
 	var buf bytes.Buffer
 	textBaseTemplate.Execute(&buf, templateData{
-		Title:   title,
-		Content: content,
-		Year:    time.Now().Year(),
+		Title:       title,
+		Content:     content,
+		Year:        time.Now().Year(),
+		InfoAddress: s.Config.Email.InfoAddress,
 	})
 	return buf.String()
 }
@@ -229,9 +232,10 @@ func (s *Service) wrapText(title, content string) string {
 func (s *Service) wrapHTML(title, content string) string {
 	var buf bytes.Buffer
 	htmlBaseTemplate.Execute(&buf, templateData{
-		Title:   title,
-		Content: template.HTML(content),
-		Year:    time.Now().Year(),
+		Title:       title,
+		Content:     template.HTML(content),
+		Year:        time.Now().Year(),
+		InfoAddress: s.Config.Email.InfoAddress,
 	})
 	return buf.String()
 }
@@ -257,7 +261,7 @@ func (s *Service) sendGenericEmail(to, subject, textBody, htmlBody string) error
 	if err != nil {
 		return err
 	}
-	messageID := fmt.Sprintf("<%d.%s@parkour-deutschland.de>", time.Now().UnixNano(), to)
+	messageID := fmt.Sprintf("<%d.%s@%s>", time.Now().UnixNano(), to, s.getDomain())
 	boundary := fmt.Sprintf("boundary_%d", time.Now().UnixNano())
 	message := fmt.Sprintf("Message-ID: %s\r\nDate: %s\r\nMIME-Version: 1.0\r\nFrom: %s <%s>\r\nTo: <%s>\r\nSubject: %s\r\nContent-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n--%s\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n\r\n--%s\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n%s\r\n\r\n--%s--",
 		messageID, time.Now().Format(time.RFC1123Z), s.Config.Email.FromName, s.Config.Email.FromAddress, to, s.encodeSubjectIfNeeded(subject), boundary, boundary, textBody, boundary, s.quotedPrintableEncode(htmlBody), boundary)
@@ -331,7 +335,7 @@ Wir werden diesen in Kürze prüfen und uns bei Dir melden.`,
 // SendApplicationNoticeEmail sends a notice email to the DPV board
 func (s *Service) SendApplicationNoticeEmail(user *entities.User, club *entities.Club) error {
 	var subject, textBody, htmlBody string
-	to := "info@parkour-deutschland.de"
+	to := s.Config.Email.InfoAddress
 
 	if club != nil {
 		subject = "Neuer Mitgliedsantrag: " + club.Name + " " + club.LegalForm
@@ -497,8 +501,8 @@ Bis dahin wünschen wir Dir viel Erfolg und weiche Landungen.`, user.FirstName, 
 }
 
 func (s *Service) generateValidationEmail(data ValidationData) string {
-	messageID := fmt.Sprintf("<%d.%s@parkour-deutschland.de>",
-		time.Now().Unix(), data.User.Key)
+	messageID := fmt.Sprintf("<%d.%s@%s>",
+		time.Now().Unix(), data.User.Key, s.getDomain())
 	berlinLocation, _ := time.LoadLocation("Europe/Berlin")
 	expiryBerlin := data.ExpiryTime.In(berlinLocation)
 
@@ -601,8 +605,8 @@ Content-Transfer-Encoding: quoted-printable
 }
 
 func (s *Service) generatePasswordResetEmail(data PasswordResetData) string {
-	messageID := fmt.Sprintf("<%d.%s@parkour-deutschland.de>",
-		time.Now().Unix(), data.User.Key)
+	messageID := fmt.Sprintf("<%d.%s@%s>",
+		time.Now().Unix(), data.User.Key, s.getDomain())
 	berlinLocation, _ := time.LoadLocation("Europe/Berlin")
 	expiryBerlin := data.ExpiryTime.In(berlinLocation)
 	subject := "Passwort zurücksetzen"
@@ -715,4 +719,16 @@ func (s *Service) quotedPrintableEncode(input string) string {
 	}
 
 	return buf.String()
+}
+
+func (s *Service) getDomain() string {
+	addr := s.Config.Email.FromAddress
+	if addr == "" {
+		addr = s.Config.Email.InfoAddress
+	}
+	parts := strings.Split(addr, "@")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return "parkour-deutschland.de"
 }

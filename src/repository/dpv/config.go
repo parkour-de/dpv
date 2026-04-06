@@ -34,6 +34,7 @@ type Config struct {
 		SMTPPassword     string `yaml:"smtp_password"`
 		FromAddress      string `yaml:"from_address"`
 		FromName         string `yaml:"from_name"`
+		InfoAddress      string `yaml:"info_address"`
 		ValidationSecret string `yaml:"validation_secret"`
 	} `yaml:"email"`
 	Server struct {

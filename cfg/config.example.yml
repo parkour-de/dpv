@@ -18,6 +18,7 @@ email:
   smtp_password: your-email-password
   from_address: your-username@your-server.de
   from_name: Deutscher Parkour Verband
+  info_address: contact-address@your-server.de
   validation_secret: your-validation-secret-key
 server:
   words1: words1.txt
