@@ -630,6 +630,20 @@ securitySchemes:
           application/json:
             type: array
 
+/stats:
+  get:
+    description: Get statistics about active users and clubs
+    responses:
+      200:
+        description: System statistics
+        body:
+          application/json:
+            type: object
+            properties:
+              active_users: integer
+              active_clubs: integer
+              active_members: integer
+
 /config:
   get:
     description: Get global configuration, including dynamic links

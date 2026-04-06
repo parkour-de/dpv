@@ -280,21 +280,27 @@ func (s *Service) UpdateRoles(ctx context.Context, userKey string, roles []strin
 		}
 	}
 
-	if hasAktivAdmin {
-		wasAktivAdmin := false
-		for _, role := range user.Roles {
-			if role == "aktivadmin" {
-				wasAktivAdmin = true
-				break
-			}
+	wasAktivAdmin := false
+	for _, role := range user.Roles {
+		if role == "aktivadmin" {
+			wasAktivAdmin = true
+			break
 		}
+	}
 
+	if hasAktivAdmin {
 		// If newly adding aktivadmin role, check for active membership
 		if !wasAktivAdmin {
 			if user.Membership.Type != "active" || (user.Membership.Status != "active" && user.Membership.Status != "cancelling") {
 				return t.Errorf("an active membership is required to become an aktivadmin.")
 			}
 		}
+	}
+
+	if hasAktivAdmin && !wasAktivAdmin {
+		user.Membership.CurrentVotes = 1
+	} else if !hasAktivAdmin && wasAktivAdmin {
+		user.Membership.CurrentVotes = 0
 	}
 
 	user.Roles = roles

@@ -6,6 +6,7 @@ import (
 	censusEndpoints "dpv/dpv/src/endpoints/census"
 	"dpv/dpv/src/endpoints/clubs"
 	configEndpoints "dpv/dpv/src/endpoints/config"
+	statsEndpoints "dpv/dpv/src/endpoints/stats"
 	"dpv/dpv/src/endpoints/users"
 	"dpv/dpv/src/middleware"
 	"dpv/dpv/src/repository/dpv"
@@ -16,6 +17,7 @@ import (
 	"dpv/dpv/src/service/club"
 	configService "dpv/dpv/src/service/config"
 	"dpv/dpv/src/service/membership"
+	statsService "dpv/dpv/src/service/stats"
 	"dpv/dpv/src/service/user"
 	"log"
 	"net/http"
@@ -61,6 +63,9 @@ func NewServer(configPath string, test bool) *http.Server {
 	cfgService := configService.NewService(db)
 	cfgHandler := configEndpoints.NewHandler(cfgService)
 
+	sService := statsService.NewService(db)
+	sHandler := statsEndpoints.NewHandler(sService)
+
 	auditHandler := audit.NewHandler(db)
 
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +80,7 @@ func NewServer(configPath string, test bool) *http.Server {
 	})
 
 	r.GET("/dpv/version", middleware.CORSMiddleware(Version))
+	r.GET("/dpv/stats", middleware.CORSMiddleware(sHandler.GetStats))
 	r.GET("/dpv/config", middleware.CORSMiddleware(cfgHandler.Get))
 	r.PATCH("/dpv/config/links", middleware.CORSMiddleware(middleware.BasicAuthMiddleware(cfgHandler.UpdateLinks, db)))
 	
