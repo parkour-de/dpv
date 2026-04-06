@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -27,6 +28,19 @@ func (h *AuditHandler) Get(w http.ResponseWriter, r *http.Request, _ httprouter.
 		return
 	}
 
+	query := r.URL.Query()
+	filterUser := query.Get("user")
+	filterTarget := query.Get("target")
+	filterAction := query.Get("action")
+	limitStr := query.Get("limit")
+
+	limit := 100
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
 	filePath := h.DB.Audit.FilePath
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -39,11 +53,21 @@ func (h *AuditHandler) Get(w http.ResponseWriter, r *http.Request, _ httprouter.
 	}
 	defer file.Close()
 
-	var logs []interface{}
+	var logs []graph.AuditEntry
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		var entry interface{}
+		var entry graph.AuditEntry
 		if err := json.Unmarshal(scanner.Bytes(), &entry); err == nil {
+			// Apply filters
+			if filterUser != "" && entry.Author != filterUser {
+				continue
+			}
+			if filterTarget != "" && entry.Type != filterTarget {
+				continue
+			}
+			if filterAction != "" && string(entry.Action) != filterAction {
+				continue
+			}
 			logs = append(logs, entry)
 		}
 	}
@@ -53,9 +77,9 @@ func (h *AuditHandler) Get(w http.ResponseWriter, r *http.Request, _ httprouter.
 		logs[i], logs[j] = logs[j], logs[i]
 	}
 
-	// Limit to last 100 for now
-	if len(logs) > 100 {
-		logs = logs[:100]
+	// Apply limit
+	if len(logs) > limit {
+		logs = logs[:limit]
 	}
 
 	api.SuccessJson(w, r, logs)
