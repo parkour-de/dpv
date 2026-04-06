@@ -3,6 +3,7 @@ package club
 import (
 	"context"
 	"dpv/dpv/src/domain/entities"
+	"dpv/dpv/src/repository/dpv"
 	"dpv/dpv/src/repository/graph"
 	"dpv/dpv/src/repository/storage"
 	"strings"
@@ -11,10 +12,11 @@ import (
 )
 
 func setupTestMembershipService(t *testing.T) *Service {
-	db, _, err := graph.Init("../../../cfg/config.yml", true)
+	db, config, err := graph.Init("../../../cfg/config.yml", true)
 	if err != nil {
 		t.Fatalf("could not initialize database: %v", err)
 	}
+	dpv.ConfigInstance = config
 	return NewService(db, storage.NewStorage(""))
 }
 
