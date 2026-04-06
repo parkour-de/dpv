@@ -3,6 +3,7 @@ package email
 import (
 	"bytes"
 	"crypto/tls"
+	"dpv/dpv/src/api"
 	"dpv/dpv/src/domain/entities"
 	"dpv/dpv/src/repository/dpv"
 	"fmt"
@@ -366,6 +367,48 @@ Bitte in der Verwaltungsoberfläche prüfen.`,
 
 // SendApplicationAcceptedEmail sends general acceptance emails to those applying
 func (s *Service) SendApplicationAcceptedEmail(user *entities.User, club *entities.Club) error {
+	var m *entities.Membership
+	if club != nil {
+		m = &club.Membership
+	} else if user != nil {
+		m = &user.Membership
+	} else {
+		return nil
+	}
+
+	admissionDate := "Sofort"
+	if m.BeginDate > 0 {
+		admissionDate = s.formatDate(m.BeginDate)
+	}
+	fee := fmt.Sprintf("%.2f €", m.CurrentFee)
+	bank := "Keine Bankverbindung hinterlegt"
+	if m.IBAN != "" {
+		bank = api.MaskIBAN(m.IBAN)
+	}
+
+	details := fmt.Sprintf(`
+Folgende Daten haben wir im System hinterlegt:
+- Tag der Aufnahme: %s
+- Mitgliedsnummer: %s
+- Jährlicher Beitrag: %s
+- Hinterlegte Bankverbindung: %s
+
+Der Beitrag wird zukünftig bequem per Lastschrift von Deinem hinterlegten Konto eingezogen.`,
+		admissionDate, m.MembershipNumber, fee, bank)
+
+	detailsHTML := fmt.Sprintf(`
+        <div style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin-top: 0;"><strong>Folgende Daten haben wir im System hinterlegt:</strong></p>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><strong>Tag der Aufnahme:</strong> %s</li>
+                <li><strong>Mitgliedsnummer:</strong> %s</li>
+                <li><strong>Jährlicher Beitrag:</strong> %s</li>
+                <li><strong>Hinterlegte Bankverbindung:</strong> %s</li>
+            </ul>
+            <p style="margin-bottom: 0; font-size: 14px; color: #555;">Der Beitrag wird zukünftig bequem per Lastschrift von Deinem hinterlegten Konto eingezogen.</p>
+        </div>`,
+		admissionDate, m.MembershipNumber, fee, bank)
+
 	if club != nil {
 		for _, v := range club.Vorstand {
 			if v.AuthorizedRepresentative && v.Email != "" {
@@ -374,12 +417,13 @@ func (s *Service) SendApplicationAcceptedEmail(user *entities.User, club *entiti
 
 der Mitgliedsantrag für Deinen Verein %s %s wurde soeben vom Deutschen Parkour Verband angenommen.
 Wir freuen uns, Euch als Mitglied begrüßen zu dürfen! 
-
-Die Mitgliedschaft ist nun aktiv. Gemeinsam können wir die Entwicklung des Parkoursports in Deutschland vorantreiben.`, v.Firstname, v.Lastname, club.Name, club.LegalForm)
+%s
+Die Mitgliedschaft ist nun aktiv. Gemeinsam können wir die Entwicklung des Parkoursports in Deutschland vorantreiben.`, v.Firstname, v.Lastname, club.Name, club.LegalForm, details)
 				htmlBody := fmt.Sprintf(`        <p>Hallo %s %s,</p>
         <p>der Mitgliedsantrag für Deinen Verein <strong>%s %s</strong> wurde soeben vom Deutschen Parkour Verband angenommen.</p>
         <p>Wir freuen uns, Euch als Mitglied begrüßen zu dürfen!</p>
-        <p>Die Mitgliedschaft ist nun aktiv. Gemeinsam können wir die Entwicklung des Parkoursports in Deutschland vorantreiben.</p>`, v.Firstname, v.Lastname, club.Name, club.LegalForm)
+%s
+        <p>Die Mitgliedschaft ist nun aktiv. Gemeinsam können wir die Entwicklung des Parkoursports in Deutschland vorantreiben.</p>`, v.Firstname, v.Lastname, club.Name, club.LegalForm, detailsHTML)
 
 				wText := s.wrapText(subject, textBody)
 				wHTML := s.wrapHTML(subject, htmlBody)
@@ -393,12 +437,13 @@ Die Mitgliedschaft ist nun aktiv. Gemeinsam können wir die Entwicklung des Park
 
 Dein Mitgliedsantrag als Aktivmitglied wurde soeben vom Deutschen Parkour Verband angenommen.
 Wir freuen uns sehr, Dich als neues Mitglied in unserer Community begrüßen zu dürfen!
-
-Deine Mitgliedschaft ist ab sofort aktiv. Gemeinsam können wir den Parkoursport stärken und unsere Ziele verwirklichen.`, user.FirstName, user.LastName)
+%s
+Deine Mitgliedschaft ist ab sofort aktiv. Gemeinsam können wir den Parkoursport stärken und unsere Ziele verwirklichen.`, user.FirstName, user.LastName, details)
 		htmlBody := fmt.Sprintf(`        <p>Hallo %s %s,</p>
         <p>Dein Mitgliedsantrag als Aktivmitglied wurde soeben vom Deutschen Parkour Verband angenommen.</p>
         <p>Wir freuen uns sehr, Dich als neues Mitglied in unserer Community begrüßen zu dürfen!</p>
-        <p>Deine Mitgliedschaft ist ab sofort aktiv. Gemeinsam können wir den Parkoursport stärken und unsere Ziele verwirklichen.</p>`, user.FirstName, user.LastName)
+%s
+        <p>Deine Mitgliedschaft ist ab sofort aktiv. Gemeinsam können wir den Parkoursport stärken und unsere Ziele verwirklichen.</p>`, user.FirstName, user.LastName, detailsHTML)
 
 		return s.sendGenericEmail(user.Email, subject, s.wrapText(subject, textBody), s.wrapHTML(subject, htmlBody))
 	}
@@ -731,4 +776,10 @@ func (s *Service) getDomain() string {
 		return parts[1]
 	}
 	return "parkour-deutschland.de"
+}
+
+func (s *Service) formatDate(unix int64) string {
+	berlinLocation, _ := time.LoadLocation("Europe/Berlin")
+	t := time.Unix(unix, 0).In(berlinLocation)
+	return t.Format("02.01.2006")
 }

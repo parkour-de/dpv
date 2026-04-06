@@ -9,8 +9,8 @@ type Membership struct {
 	Status            string  `json:"status"` // inactive, requested, active, denied, cancelled
 	Address           string  `json:"address,omitempty"`
 	ApplicationDate   int64   `json:"application_date,omitempty"` // unix seconds
-	BeginDate         int64   `json:"begin_date,omitempty"`       // unix seconds
-	EndDate           int64   `json:"end_date,omitempty"`         // unix seconds
+	BeginDate         int64   `json:"begin_date"`                 // unix seconds
+	EndDate           int64   `json:"end_date"`                   // unix seconds
 	MembershipNumber  string  `json:"membership_number,omitempty"`
 	CurrentFee        float64 `json:"current_fee,omitempty"`
 	CurrentVotes      int     `json:"current_votes,omitempty"`
