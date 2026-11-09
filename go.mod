@@ -6,7 +6,7 @@ require (
 	github.com/arangodb/go-driver/v2 v2.2.0
 	github.com/julienschmidt/httprouter v1.3.0
 	golang.org/x/crypto v0.58.0
-	golang.org/x/text v0.43.0
+	golang.org/x/text v0.44.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
